@@ -6,10 +6,15 @@
 #include <netinet/in.h>
 #include <stdio.h>
 
+#include "ringmain.h"
 #include "ringmain.c"
 
 
-void setupServerConnection(){
+void serverMain(const char *localPort){
+  setupServerConnection(localPort);
+}
+
+void setupServerConnection(const char *localPort){
   //Setup server connection
 
 

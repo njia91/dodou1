@@ -6,34 +6,28 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <pthread.h>
+#include <sys/stat.h>
 
 #include "server.c"
+#include "ringmain.h"
 
+pthread_cond_t newMessage;
+pthread_mutex_t mtxRingInfo;
 
-typedef enum {
-  ELECTION,
-  ELECTION_OVER,
-  MESSAGE
-} phase;
-
-typedef struct {
-  char *localPort;
-  char *remoteIP;
-  char *remotePort;
-} nodeArg;
 
 int main(int argc, char **argv){
   nodeArg inputArg = 0;
   printf("IT IS WORKING !!!!");
 
+  pthread_mutex_init(&mtxRingInfo, NULL);
+  pthread_cond_init(&nerMessage, NULL);
 
   parseArgs(argc, argv, inputArg);
-  setupServerConnection(inputArg);
 
-
+  serverMain(inputArg->localPort);
 
   //Connection to server.
-
 
   //Recieve Packet
 }
@@ -43,12 +37,10 @@ struct addrinfo* fillinAddrInfo(const char* host, const char *portNo){
   const char* portname = portNo;
   struct addrinfo hints;
   memset(&hints,0,sizeof(hints));
-
   hints.ai_family=AF_UNSPEC;
   hints.ai_socktype=SOCK_STREAM;
   hints.ai_protocol=0;
   hints.ai_flags=AI_ADDRCONFIG;
-
   return hints;
 }
 
