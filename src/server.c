@@ -1,49 +1,82 @@
-#include <errno.h>
+
 #include <string.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <stdio.h>
-
-#include "ringmain.h"
-#include "ringmain.c"
+#include <stdbool.h>
 
 
-void serverMain(const char *localPort){
-  setupServerConnection(localPort);
+#include "server.h"
+
+int listenForIncommingConnection(int server_fd){
+  int connection_fd;
+  printf("Listening for incominingg......!!!! %lu \n", pthread_self());
+  while((connection_fd = accept (server_fd, 0, 0)) == -1){
+
+      if (errno == EAGAIN ){
+        fprintf(stderr, "%s",strerror(errno));
+      } else {
+        die(strerror(errno));
+      }
+  }
+  return connection_fd;
+
 }
 
-void setupServerConnection(const char *localPort){
+int setupServerConnection(const int localPort){
   //Setup server connection
-
-
-  struct addrinfo &hints = fillinAddrInfo(0, inputArg->remotePort);
+  int server_fd;
+  char portId[15];
+  sprintf(portId, "%d", localPort);
+  struct addrinfo hints;
+  memset(&hints,0,sizeof(hints));
+  fillinAddrInfo("0", localPort, &hints);
   struct addrinfo* result=0;
-  int err=getaddrinfo(hostname,portname,&hints,&results);
+  int err = getaddrinfo("localhost",portId,&hints,&result);
   if (err!=0) {
-      die("failed to resolve remote socket address (err=%d)",err);
+      die(gai_strerror(err));
   }
 
-  int server_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  server_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
   if (server_fd ==-1){
-    die("Error when creating socet: %s", strerror(errno));
+    die(strerror(errno));
   }
 
   int resueaddr=1;
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(resueaddr), sizeof(&resueaddr)) == -1){
-    die("Error while setting socket option: %s",strerror(errno));
+    die(strerror(errno));
   }
 
   if(bind(server_fd, result->ai_addr, result->ai_addrlen) == -1){
-    die("Error while binding server socket: %s",strerror(errno));
+    die(strerror(errno));
   }
-  freeaddrinfo(res);
+  freeaddrinfo(result);
 
   if (listen(server_fd, SOMAXCONN)){
-    die("Error: Coult not listen for connection: %s", strerror(errno));
+    die(strerror(errno));
   }
+  return server_fd;
+}
 
+void handleConnectionSession(int connection_fd){
+  char buffer[100];
+  bool ringActive = true;
+  int ret;
 
+  while (ringActive){
+    printf("Handle connection.....!!!! %lu \n", pthread_self());
+    ret = recv(connection_fd, buffer, sizeof(buffer), 0);
+    if (ret == -1){
+      die(strerror(errno));
+    }
+    printf("Message from Client %s", buffer);
+    memset(buffer, 0, sizeof(buffer));
+  }
+}
 
+void *serverMain(void *localPort){
+  int portId =  *(int *)localPort;
+  int server_fd = setupServerConnection(portId);
+  int connection_fd = listenForIncommingConnection(server_fd);
+  handleConnectionSession(connection_fd);
+
+  pthread_exit(NULL);
 }

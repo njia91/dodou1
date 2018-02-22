@@ -1,61 +1,58 @@
 // TCP Implementation
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <sys/stat.h>
 
-#include "server.c"
+#include "server.h"
 #include "ringmain.h"
+#include "client.h"
 
 pthread_cond_t newMessage;
 pthread_mutex_t mtxRingInfo;
 
-
-int main(int argc, char **argv){
-  nodeArg inputArg = 0;
-  printf("IT IS WORKING !!!!");
-
-  pthread_mutex_init(&mtxRingInfo, NULL);
-  pthread_cond_init(&nerMessage, NULL);
-
-  parseArgs(argc, argv, inputArg);
-
-  serverMain(inputArg->localPort);
-
-  //Connection to server.
-
-  //Recieve Packet
-}
-
-struct addrinfo* fillinAddrInfo(const char* host, const char *portNo){
-  const char* hostname = host; /* localhost */
-  const char* portname = portNo;
-  struct addrinfo hints;
-  memset(&hints,0,sizeof(hints));
-  hints.ai_family=AF_UNSPEC;
-  hints.ai_socktype=SOCK_STREAM;
-  hints.ai_protocol=0;
-  hints.ai_flags=AI_ADDRCONFIG;
+struct addrinfo* fillinAddrInfo(const char* host, const int portNo,
+                                struct addrinfo *hints){
+  hints->ai_family=AF_UNSPEC;
+  hints->ai_socktype=SOCK_STREAM;
+  hints->ai_protocol=0;
+  hints->ai_flags=AI_ADDRCONFIG;
   return hints;
 }
 
-//Error printing Function
-void die(char* message){
-    	fprintf(stderr, message);
+
+
+void parseArgs(int argc, char **argv, nodeArg *colArg){
+  if (argc < 4){
+    die("Too few Arguments \n"
+          "<ProgramName> [localPort] [remote IP Adress] [remote Port]\n");
+  }
+  colArg->localPort = htons(atoi(argv[1]));
+  colArg->remoteIP = argv[2];
+  colArg->remotePort = htons(atoi(argv[3]));
+}
+
+void die(const char* message){
+
+    	fprintf(stderr, "What is failing... %s", message);
     	exit(EXIT_FAILURE);
 }
 
-void parseArgs(int argc, char **argv, nodeArg *inputArg){
-  if (argc < 4){
-    die("Too few Arguments \n
-          <ProgramName> [localPort] [remote IP Adress] [remote Port]\n")
+int main(int argc, char **argv){
+  nodeArg inputArg;
+  printf("Start of main!!!!%lu \n", pthread_self());
+  pthread_t serverThread;
+
+
+  pthread_mutex_init(&mtxRingInfo, NULL);
+  pthread_cond_init(&newMessage, NULL);
+
+  parseArgs(argc, argv, &inputArg);
+
+  int ret = pthread_create(&serverThread, NULL, serverMain, (void *) &inputArg.localPort);
+  if (ret){
+    die(strerror(errno));
   }
-  arg->localPort = argv[1];
-  arg->remoteIP = argv[2];
-  arg->remotePort = argv[3];
+  //serverMain(inputArg.localPort);
+
+  //Connection to server.
+  clientMain(inputArg.remoteIP, inputArg.remotePort);
+
+  //Recieve Packet
 }
