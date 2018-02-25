@@ -8,15 +8,18 @@
 
 int listenForIncommingConnection(int server_fd){
   int connection_fd;
-  printf("Listening for incominingg......!!!! %lu \n", pthread_self());
   while((connection_fd = accept (server_fd, 0, 0)) == -1){
 
       if (errno == EAGAIN ){
+        printf("Can not find stuf........!!!! %lu \n", pthread_self());
         fprintf(stderr, "%s",strerror(errno));
       } else {
+        printf("Die Listening.........!!!! %lu \n", pthread_self());
         die(strerror(errno));
+
       }
   }
+  printf("Finish listening....!!!! %lu \n", pthread_self());
   return connection_fd;
 
 }
@@ -60,15 +63,55 @@ void handleConnectionSession(int connection_fd){
   char buffer[100];
   bool ringActive = true;
   int ret;
+  int phase;
+  char *message;
 
   while (ringActive){
+    memset(buffer, 0, sizeof(buffer));
+
     printf("Handle connection.....!!!! %lu \n", pthread_self());
     ret = recv(connection_fd, buffer, sizeof(buffer), 0);
     if (ret == -1){
       die(strerror(errno));
     }
-    printf("Message from Client %s", buffer);
-    memset(buffer, 0, sizeof(buffer));
+    printf("Message from Client %s \n", buffer);
+    for (int i = 0; i < strlen(buffer) && buffer[i] != '\0'; i++){
+      if(buffer[i] == '\n'){
+        if(strncmp(buffer, "ELECTION", i)){
+          phase = ELECTION;
+        }else if(strncmp(buffer, "ELECTION_OVER", i)){
+          phase = ELECTION_OVER;
+        }else if(strncmp(buffer, "MESSAGE", i)){
+          phase = ELECTION_OVER;
+        } else{
+          die("Invalid Message formate - Read the instructions...");
+        }
+        printf("SERVER ELECTION:  %d \n", phase);
+        message = &buffer[i + 1];
+        break;
+      }
+
+    }
+    printf("SERVER ELECTION:  %d \n", phase);
+    printf("SERVER ELECTION:  %s \n", message);
+    // switch(ringInfo.currentPhase){
+    //   case ELECTION:
+    //     pthread_mutex_lock(&mtxRingInfo);
+    //     //printf("SERVER ELECTION:  %s \n", message);
+    //   break;
+    //   case ELECTION_OVER:
+    //
+    //   //  printf("SERVER ELECTION_OVER %s %lu \n",message);
+    //   break;
+    //   case MESSAGE:
+    //
+    // //  printf("SERVER MESSAGE:  %s \n", message);
+    //   default:
+    //   //  die("Something is wrong.. \n");
+    //     break;
+    // }
+
+
   }
 }
 

@@ -13,12 +13,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/stat.h>
-
-pthread_cond_t newMessage;
-pthread_mutex_t mtxRingInfo;
-
+#include <stdbool.h>
 
 typedef enum {
+  NOT_STARTED,
   ELECTION,
   ELECTION_OVER,
   MESSAGE
@@ -32,15 +30,23 @@ typedef struct {
 
 typedef struct {
   phase currentPhase;
+  bool participant;
   char *message;
   char *highestId;
   char *ownId;
 } ringInformation;
 
+pthread_cond_t newMessage;
+pthread_mutex_t mtxRingInfo;
+
+ringInformation ringInfo;
+
 //Error printing Function
 void die(const char* message);
 
 void parseArgs(int argc, char **argv, nodeArg *colArg);
+
+int getFQDN(char *fqdn, size_t n);
 
 struct addrinfo* fillinAddrInfo(const char* host, const int portNo,
                                 struct addrinfo *hints);
