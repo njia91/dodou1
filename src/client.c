@@ -1,5 +1,5 @@
 #include "client.h"
-#include <stdbool.h>
+
 
 void clientMain(const char *remoteAdress, const int remotePort){
   int client_fd = setupConnectionToServer(remoteAdress, remotePort);
@@ -8,9 +8,43 @@ void clientMain(const char *remoteAdress, const int remotePort){
 
 void sendMessagesToServer(int client_fd){
   bool active = true;
-  char message[100] = "Sending message....";
+  const char election_str[] = "ELECTION\n";
+  const char election_over_str[] = "ELECTION_OVER\n";
+  const char message_str[] = "MESSAGE\n";
+
+  char message[100] = "\0";
+  if(ringInfo.currentPhase == NOT_STARTED){
+    sleep(1);
+  }
+
   while(active){
-    printf("Sending message!!! %lu \n", pthread_self());
+    memset(&message, 0, sizeof(message));
+
+    switch(ringInfo.currentPhase){
+      case NOT_STARTED:
+        strncpy(message, election_str, strlen(election_str));
+        strncat(message, ringInfo.ownId, strlen(ringInfo.ownId));
+        printf("Not started:  %s! \n", message);
+      break;
+      case ELECTION:
+        strncpy(message, election_str, strlen(election_str));
+        strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("ELECTION:  %s \n", message);
+      break;
+      case ELECTION_OVER:
+        strncpy(message, election_over_str, strlen(election_over_str));
+        strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("ELECTION_OVER %s %lu \n",message);
+      break;
+      case MESSAGE:
+        strncpy(message, message_str, strlen(message_str));
+        strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+        strncat(message, ringInfo.message, strlen(ringInfo.message));
+      printf("MESSAGE:  %s \n", message);
+      default:
+        die("Something is wrong.. \n");
+        break;
+    }
     send(client_fd, message, sizeof(message), 0);
     sleep(4);
   }
@@ -26,7 +60,7 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
   fillinAddrInfo(remoteAdress, remotePort, &hints);
   struct addrinfo* result=0;
 
-  int err = getaddrinfo("localhost", portId,&hints,&result);
+  int err = getaddrinfo(remoteAdress, portId,&hints,&result);
   if (err!=0) {
       die(gai_strerror(err));
   }
@@ -36,8 +70,9 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
     die(strerror(errno));
   }
 
-  while(connect(client_fd, result->ai_addr, result->ai_addrlen) != -1){
-    fprintf(stderr, "%s", strerror(errno));
+  while(connect(client_fd, result->ai_addr, result->ai_addrlen) == -1){
+    fprintf(stderr, "Unable to connect - Will retry to connect."
+                    "Errno: %s", strerror(errno));
     sleep(2);
   }
 

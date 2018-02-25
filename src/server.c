@@ -8,15 +8,18 @@
 
 int listenForIncommingConnection(int server_fd){
   int connection_fd;
-  printf("Listening for incominingg......!!!! %lu \n", pthread_self());
   while((connection_fd = accept (server_fd, 0, 0)) == -1){
 
       if (errno == EAGAIN ){
+        printf("Can not find stuf........!!!! %lu \n", pthread_self());
         fprintf(stderr, "%s",strerror(errno));
       } else {
+        printf("Die Listening.........!!!! %lu \n", pthread_self());
         die(strerror(errno));
+
       }
   }
+  printf("Finish listening....!!!! %lu \n", pthread_self());
   return connection_fd;
 
 }
@@ -67,7 +70,7 @@ void handleConnectionSession(int connection_fd){
     if (ret == -1){
       die(strerror(errno));
     }
-    printf("Message from Client %s", buffer);
+    printf("Message from Client %s \n", buffer);
     memset(buffer, 0, sizeof(buffer));
   }
 }
