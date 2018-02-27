@@ -36,6 +36,7 @@ void sendMessagesToServer(int client_fd){
       case MESSAGE:
         strncpy(message, message_str, strlen(message_str));
         strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+
         strncat(message, ringInfo.message, strlen(ringInfo.message));
         printf("MESSAGE:  %s \n", message);
         break;
