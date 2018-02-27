@@ -15,6 +15,10 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
+static const char election_str[] = "ELECTION\n";
+static const char election_over_str[] = "ELECTION_OVER\n";
+static const char message_str[] = "MESSAGE\n";
+
 typedef enum {
   NOT_STARTED,
   ELECTION,
@@ -38,8 +42,9 @@ typedef struct {
 
 pthread_cond_t newMessage;
 pthread_mutex_t mtxRingInfo;
-
 ringInformation ringInfo;
+
+
 
 //Error printing Function
 void die(const char* message);

@@ -8,23 +8,20 @@ void clientMain(const char *remoteAdress, const int remotePort){
 
 void sendMessagesToServer(int client_fd){
   bool active = true;
-  const char election_str[] = "ELECTION\n";
-  const char election_over_str[] = "ELECTION_OVER\n";
-  const char message_str[] = "MESSAGE\n";
 
   char message[100] = "\0";
-  if(ringInfo.currentPhase == NOT_STARTED){
-    sleep(1);
-  }
+  // if(ringInfo.currentPhase == NOT_STARTED){
+  //   sleep(1);
+  // }
 
   while(active){
     memset(&message, 0, sizeof(message));
-
+    pthread_mutex_lock(&mtxRingInfo);
     switch(ringInfo.currentPhase){
       case NOT_STARTED:
         strncpy(message, election_str, strlen(election_str));
         strncat(message, ringInfo.ownId, strlen(ringInfo.ownId));
-        printf("Not started:  %s! \n", message);
+        printf("Not started:  %s! \n", ringInfo.ownId);
       break;
       case ELECTION:
         strncpy(message, election_str, strlen(election_str));
@@ -39,12 +36,15 @@ void sendMessagesToServer(int client_fd){
       case MESSAGE:
         strncpy(message, message_str, strlen(message_str));
         strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+
         strncat(message, ringInfo.message, strlen(ringInfo.message));
-      printf("MESSAGE:  %s \n", message);
+        printf("MESSAGE:  %s \n", message);
+        break;
       default:
         die("Something is wrong.. \n");
         break;
     }
+    pthread_mutex_unlock(&mtxRingInfo);
     send(client_fd, message, sizeof(message), 0);
     sleep(4);
   }
