@@ -63,8 +63,7 @@ void handleConnectionSession(int connection_fd){
   char buffer[100];
   bool ringActive = true;
   int ret;
-  int phase;
-  char *message;
+  char *recievedMessage;
 
   while (ringActive){
     memset(buffer, 0, sizeof(buffer));
@@ -75,43 +74,52 @@ void handleConnectionSession(int connection_fd){
       die(strerror(errno));
     }
     printf("Message from Client %s \n", buffer);
+    pthread_mutex_lock(&mtxRingInfo);
     for (int i = 0; i < strlen(buffer) && buffer[i] != '\0'; i++){
       if(buffer[i] == '\n'){
-        if(strncmp(buffer, "ELECTION", i)){
-          phase = ELECTION;
-        }else if(strncmp(buffer, "ELECTION_OVER", i)){
-          phase = ELECTION_OVER;
-        }else if(strncmp(buffer, "MESSAGE", i)){
-          phase = ELECTION_OVER;
+        if(!(strncmp(buffer, election_str, i))){
+          ringInfo.currentPhase = ELECTION;
+        }else if(!(strncmp(buffer, election_over_str, i))){
+          ringInfo.currentPhase = ELECTION_OVER;
+        }else if(!(strncmp(buffer, message_str, i))){
+          ringInfo.currentPhase = MESSAGE;
         } else{
           die("Invalid Message formate - Read the instructions...");
         }
-        printf("SERVER ELECTION:  %d \n", phase);
-        message = &buffer[i + 1];
+        recievedMessage = &buffer[i + 1];
         break;
       }
-
     }
-    printf("SERVER ELECTION:  %d \n", phase);
-    printf("SERVER ELECTION:  %s \n", message);
-    // switch(ringInfo.currentPhase){
-    //   case ELECTION:
-    //     pthread_mutex_lock(&mtxRingInfo);
-    //     //printf("SERVER ELECTION:  %s \n", message);
-    //   break;
-    //   case ELECTION_OVER:
-    //
-    //   //  printf("SERVER ELECTION_OVER %s %lu \n",message);
-    //   break;
-    //   case MESSAGE:
-    //
-    // //  printf("SERVER MESSAGE:  %s \n", message);
-    //   default:
-    //   //  die("Something is wrong.. \n");
-    //     break;
-    // }
 
 
+    printf("SERVER ELECTION:  %d \n", ringInfo.currentPhase);
+    printf("SERVER MESSAGE:  %s \n", recievedMessage);
+    switch(ringInfo.currentPhase){
+      case ELECTION:
+        //Compare NODE ID
+        ret = strcmp(recievedMessage, ringInfo.highestId);
+        if(ret > 0 ){
+          printf("ID BIFFER THEN OTHER...!!!%s \n", recievedMessage);
+          ringInfo.highestId = recievedMessage;
+        } else if ( ret == 0){
+          printf("message phase entered!!!%s \n", recievedMessage);
+          ringInfo.currentPhase = MESSAGE;
+        }
+        //printf("SERVER ELECTION:  %s \n", message);
+      break;
+      case ELECTION_OVER:
+      //DO NOTHING?
+      //  printf("SERVER ELECTION_OVER %s %lu \n",message);
+      break;
+      case MESSAGE:
+      //SAVE MESSAGE?
+    //  printf("SERVER MESSAGE:  %s \n", message);
+      case NOT_STARTED:
+      default:
+      //  die("Something is wrong.. \n");
+        break;
+    }
+    pthread_mutex_unlock(&mtxRingInfo);
   }
 }
 

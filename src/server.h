@@ -2,6 +2,7 @@
 #define __SERVER
 
 #include "ringmain.h"
+#include <stdlib.h>
 
 int setupServerConnection(const int localPort);
 int listenForIncommingConnection(int server_fd);
