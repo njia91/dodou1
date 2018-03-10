@@ -103,12 +103,16 @@ void handleConnectionSession(int connection_fd){
           ringInfo.highestId = recievedMessage;
         } else if ( ret == 0){
           printf("message phase entered!!!%s \n", recievedMessage);
-          ringInfo.currentPhase = MESSAGE;
+          ringInfo.currentPhase = ELECTION_OVER;
         }
-        //printf("SERVER ELECTION:  %s \n", message);
+        ringInfo.participant = true;
+	//printf("SERVER ELECTION:  %s \n", message);
       break;
       case ELECTION_OVER:
       //DO NOTHING?
+      if ( strcmp(recievedMessage, ringInfo.ownId) == 0){
+	      ringInfo.currentPhase = MESSAGE;
+      }
       //  printf("SERVER ELECTION_OVER %s %lu \n",message);
       break;
       case MESSAGE:
@@ -119,6 +123,7 @@ void handleConnectionSession(int connection_fd){
       //  die("Something is wrong.. \n");
         break;
     }
+    pthread_cond_broadcast(&newMessage);
     pthread_mutex_unlock(&mtxRingInfo);
   }
 }

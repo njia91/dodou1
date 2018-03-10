@@ -75,7 +75,9 @@ int main(int argc, char **argv){
   ownFQDN[strlen(ownFQDN)] = ',';
   ringInfo.ownId = strncat(ownFQDN, argv[1], strlen(ownFQDN));
   ringInfo.highestId =  ringInfo.ownId;
+  printf("RING ID: %s \n",ringInfo.highestId);
   printf("RING ID: %s \n",ringInfo.ownId);
+  ringInfo.message = "Micke är bäst...";
   ringInfo.currentPhase = NOT_STARTED;
 //printf("NOT STARTED222!!!!!! %d \n", ringInfo.currentPhase);
   parseArgs(argc, argv, &inputArg);

@@ -8,13 +8,15 @@ void clientMain(const char *remoteAdress, const int remotePort){
 
 void sendMessagesToServer(int client_fd){
   bool active = true;
-
+  int count = 0;
   char message[100] = "\0";
   // if(ringInfo.currentPhase == NOT_STARTED){
   //   sleep(1);
   // }
 
   while(active){
+        count++;
+	  printf("BEGINING OF LOOP\n");
     memset(&message, 0, sizeof(message));
     pthread_mutex_lock(&mtxRingInfo);
     switch(ringInfo.currentPhase){
@@ -34,18 +36,24 @@ void sendMessagesToServer(int client_fd){
         printf("ELECTION_OVER %s \n",message);
       break;
       case MESSAGE:
+        printf("MESSAGE:  1%s \n", message);
         strncpy(message, message_str, strlen(message_str));
+        printf("MESSAGE: 2 %s \n", message);
+        printf("HIGHEST ID: 2 %s \n",ringInfo.highestId);
         strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("MESSAGE: 3 %s \n", message);
 
         strncat(message, ringInfo.message, strlen(ringInfo.message));
-        printf("MESSAGE:  %s \n", message);
+        printf("MESSAGE: 4 %s \n", message);
         break;
       default:
         die("Something is wrong.. \n");
         break;
     }
-    pthread_mutex_unlock(&mtxRingInfo);
     send(client_fd, message, sizeof(message), 0);
+    printf("Going to sleep.... %d\n", count);
+    pthread_cond_wait(&newMessage, &mtxRingInfo);
+    pthread_mutex_unlock(&mtxRingInfo);
     sleep(4);
   }
 }
