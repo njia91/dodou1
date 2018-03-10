@@ -26,6 +26,7 @@ void sendMessagesToServer(int client_fd){
         printf("Not started:  %s! \n", ringInfo.ownId);
       break;
       case ELECTION:
+      	ringInfo.participant = true;
         strncpy(message, election_str, strlen(election_str));
         strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
         printf("ELECTION:  %s \n", message);

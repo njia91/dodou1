@@ -74,6 +74,7 @@ int main(int argc, char **argv){
 
   ownFQDN[strlen(ownFQDN)] = ',';
   ringInfo.ownId = strncat(ownFQDN, argv[1], strlen(ownFQDN));
+  ringInfo.ownId[strlen(ringInfo.ownId)+1] = '\n';
   ringInfo.highestId =  ringInfo.ownId;
   printf("RING ID: %s \n",ringInfo.highestId);
   printf("RING ID: %s \n",ringInfo.ownId);

@@ -104,17 +104,17 @@ void handleConnectionSession(int connection_fd){
         } else if ( ret == 0){
           printf("message phase entered!!!%s \n", recievedMessage);
           ringInfo.currentPhase = ELECTION_OVER;
+          ringInfo.participant = false;
         }
-        ringInfo.participant = true;
 	//printf("SERVER ELECTION:  %s \n", message);
-      break;
+      	break;
       case ELECTION_OVER:
       //DO NOTHING?
-      if ( strcmp(recievedMessage, ringInfo.ownId) == 0){
-	      ringInfo.currentPhase = MESSAGE;
-      }
+      	if ( strcmp(recievedMessage, ringInfo.ownId) == 0){
+	      	ringInfo.currentPhase = MESSAGE;
+      	}
       //  printf("SERVER ELECTION_OVER %s %lu \n",message);
-      break;
+      	break;
       case MESSAGE:
       //SAVE MESSAGE?
     //  printf("SERVER MESSAGE:  %s \n", message);
