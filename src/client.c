@@ -9,7 +9,6 @@ void clientMain(const char *remoteAdress, const int remotePort){
 void sendMessagesToServer(int client_fd){
   bool active = true;
   int count = 0;
-  char message[100] = "\0";
   // if(ringInfo.currentPhase == NOT_STARTED){
   //   sleep(1);
   // }
@@ -17,36 +16,35 @@ void sendMessagesToServer(int client_fd){
   while(active){
         count++;
 	  printf("BEGINING OF LOOP\n");
-    memset(&message, 0, sizeof(message));
     pthread_mutex_lock(&mtxRingInfo);
     switch(ringInfo.currentPhase){
       case NOT_STARTED:
-        strncpy(message, election_str, strlen(election_str));
-        strncat(message, ringInfo.ownId, strlen(ringInfo.ownId));
+        strncpy(ringInfo.message, election_str, strlen(election_str));
+        strncat(ringInfo.message, ringInfo.ownId, strlen(ringInfo.ownId));
         printf("Not started:  %s! \n", ringInfo.ownId);
       break;
       case ELECTION:
       	ringInfo.participant = true;
-        strncpy(message, election_str, strlen(election_str));
-        strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
-        printf("ELECTION:  %s \n", message);
+        strncpy(ringInfo.message, election_str, strlen(election_str));
+        strncat(ringInfo.message, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("ELECTION:  %s \n", ringInfo.message);
       break;
       case ELECTION_OVER:
-        strncpy(message, election_over_str, strlen(election_over_str));
-        strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
-        printf("ELECTION_OVER %s \n",message);
+        strncpy(ringInfo.message, election_over_str, strlen(election_over_str));
+        strncat(ringInfo.message, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("ELECTION_OVER %s \n",ringInfo.message);
       break;
       case MESSAGE:
-        strncpy(message, message_str, strlen(message_str));
-        strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
-        strncat(message, ringInfo.message, strlen(ringInfo.message));
-        printf("MESSAGE: 4 %s \n", message);
+        //strncpy(message, message_str, strlen(message_str));
+        //strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
+        //strncat(message, ringInfo.message, strlen(ringInfo.message));
+        //printf("MESSAGE: 4 %s \n", message);
         break;
       default:
         die("Something is wrong.. \n");
         break;
     }
-    send(client_fd, message, sizeof(message), 0);
+    send(client_fd, ringInfo.message, sizeof(ringInfo.message), 0);
     printf("Going to sleep.... %d\n", count);
     pthread_cond_wait(&newMessage, &mtxRingInfo);
     pthread_mutex_unlock(&mtxRingInfo);

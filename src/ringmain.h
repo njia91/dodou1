@@ -35,7 +35,8 @@ typedef struct {
 typedef struct {
   phase currentPhase;
   bool participant;
-  char *message;
+	char *message;
+  char packetToSend[100];
   char *highestId;
   char *ownId;
 } ringInformation;

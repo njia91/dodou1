@@ -14,7 +14,6 @@ int listenForIncommingConnection(int server_fd){
         printf("Can not find stuf........!!!! %lu \n", pthread_self());
         fprintf(stderr, "%s",strerror(errno));
       } else {
-        printf("Die Listening.........!!!! %lu \n", pthread_self());
         die(strerror(errno));
 
       }
@@ -59,12 +58,39 @@ int setupServerConnection(const int localPort){
   return server_fd;
 }
 
+void prepareMessage(){
+    switch(ringInfo.currentPhase){
+      case NOT_STARTED:
+        strncpy(ringInfo.packetToSend, election_str, strlen(election_str));
+        strncat(ringInfo.message, ringInfo.ownId, strlen(ringInfo.ownId));
+        printf("Not started:  %s! \n", ringInfo.ownId);
+      break;
+      case ELECTION:
+      	ringInfo.participant = true;
+        strncpy(ringInfo.packetToSend, election_str, strlen(election_str));
+        strncat(ringInfo.packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("ELECTION:  %s \n", ringInfo.packetToSend);
+      break;
+      case ELECTION_OVER:
+        strncpy(ringInfo.packetToSend, election_over_str, strlen(election_over_str));
+        strncat(ringInfo.packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
+        printf("ELECTION_OVER %s \n",ringInfo.packetToSend);
+      	break;
+      case MESSAGE:
+        break;
+      default:
+        die("Something is wrong.. \n");
+        break;
+    }		
+
+}
+
 void handleConnectionSession(int connection_fd){
   char buffer[100];
   bool ringActive = true;
   int ret;
   char *recievedMessage;
-
+	bool shouldMessageBeForwarded = false;
   while (ringActive){
     memset(buffer, 0, sizeof(buffer));
 
@@ -100,13 +126,21 @@ void handleConnectionSession(int connection_fd){
         ret = strcmp(recievedMessage, ringInfo.highestId);
         if(ret > 0 ){
           printf("ID BIFFER THEN OTHER...!!!%s \n", recievedMessage);
+					shouldMessageBeForwarded = true;
           ringInfo.highestId = recievedMessage;
-        } else if ( ret == 0){
+        }
+			  else if (ret < 0 && ringInfo.participant == true){
+					shouldMessageBeForwarded = false;
+				}	
+				else if ( ret < 0 && ringInfo.participant == false){
+					
+					shouldMessageBeForwarded = true;				
+				}	
+				else if ( ret == 0){
           printf("message phase entered!!!%s \n", recievedMessage);
           ringInfo.currentPhase = ELECTION_OVER;
           ringInfo.participant = false;
         }
-	//printf("SERVER ELECTION:  %s \n", message);
       	break;
       case ELECTION_OVER:
       //DO NOTHING?
@@ -123,7 +157,10 @@ void handleConnectionSession(int connection_fd){
       //  die("Something is wrong.. \n");
         break;
     }
-    pthread_cond_broadcast(&newMessage);
+		if(shouldMessageBeForwarded){
+			prepareMessage();
+			pthread_cond_broadcast(&newMessage);
+		}		
     pthread_mutex_unlock(&mtxRingInfo);
   }
 }
