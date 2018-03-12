@@ -49,12 +49,11 @@ int getFQDN(char *fqdn, size_t n){
 
   struct addrinfo *info;
   if(getaddrinfo(hostname, NULL, &h, &info) != 0){
-    return 2;
+		return 2;
   }
 
   strncpy(fqdn, info->ai_canonname, n);
   freeaddrinfo(info);
-
   return 0;
 }
 
@@ -76,8 +75,6 @@ int main(int argc, char **argv){
   ringInfo.ownId = strncat(ownFQDN, argv[1], strlen(ownFQDN));
   ringInfo.ownId[strlen(ringInfo.ownId)+1] = '\n';
   ringInfo.highestId =  ringInfo.ownId;
-  printf("RING ID: %s \n",ringInfo.highestId);
-  printf("RING ID: %s \n",ringInfo.ownId);
   ringInfo.message = "Micke är bäst...";
   ringInfo.currentPhase = NOT_STARTED;
 //printf("NOT STARTED222!!!!!! %d \n", ringInfo.currentPhase);

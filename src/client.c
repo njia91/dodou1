@@ -37,13 +37,8 @@ void sendMessagesToServer(int client_fd){
         printf("ELECTION_OVER %s \n",message);
       break;
       case MESSAGE:
-        printf("MESSAGE:  1%s \n", message);
         strncpy(message, message_str, strlen(message_str));
-        printf("MESSAGE: 2 %s \n", message);
-        printf("HIGHEST ID: 2 %s \n",ringInfo.highestId);
         strncat(message, ringInfo.highestId, strlen(ringInfo.highestId));
-        printf("MESSAGE: 3 %s \n", message);
-
         strncat(message, ringInfo.message, strlen(ringInfo.message));
         printf("MESSAGE: 4 %s \n", message);
         break;
