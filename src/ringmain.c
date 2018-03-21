@@ -85,10 +85,9 @@ int main(int argc, char **argv){
     die(strerror(errno));
   }
 
-  //Connection to server.
   clientMain(inputArg.remoteIP, inputArg.remotePort);
 
   pthread_mutex_destroy(&mtxRingInfo);
   pthread_cond_destroy(&newMessage);
-  //Recieve Packet
+
 }

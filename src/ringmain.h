@@ -15,15 +15,17 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
-static const char election_str[] = "ELECTION\n";
-static const char election_over_str[] = "ELECTION_OVER\n";
-static const char message_str[] = "MESSAGE\n";
+static const char ELECTION_STR[] = "ELECTION\n";
+static const char ELECTION_OVER_STR[] = "ELECTION_OVER\n";
+static const char MESSAGE_STR[] = "MESSAGE\n";
+
+static const int PACKET_SIZE = 100;
 
 typedef enum {
-  NOT_STARTED,
   ELECTION,
   ELECTION_OVER,
-  MESSAGE
+  MESSAGE,
+  NOT_STARTED
 } phase;
 
 typedef struct {
@@ -36,7 +38,7 @@ typedef struct {
   phase currentPhase;
   bool participant;
 	char *message;
-  char packetToSend[100];
+  char receivedMessage[100];
   char *highestId;
   char *ownId;
 } ringInformation;
