@@ -1,8 +1,7 @@
 #ifndef __RING
 #define __RING
-
-
 #define _DEFAULT_SOURCE
+
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,11 +13,11 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <signal.h>
 
 static const char ELECTION_STR[] = "ELECTION\n";
 static const char ELECTION_OVER_STR[] = "ELECTION_OVER\n";
 static const char MESSAGE_STR[] = "MESSAGE\n";
-
 static const int PACKET_SIZE = 100;
 
 typedef enum {
@@ -37,6 +36,7 @@ typedef struct {
 typedef struct {
   phase currentPhase;
   bool participant;
+	bool ringActive;
 	char *message;
   char receivedMessage[100];
   char *highestId;
@@ -48,11 +48,13 @@ pthread_mutex_t mtxRingInfo;
 ringInformation ringInfo;
 
 
-
 //Error printing Function
 void die(const char* message);
 
 void parseArgs(int argc, char **argv, nodeArg *colArg);
+
+
+void sigIntHandler(int sig);
 
 int getFQDN(char *fqdn, size_t n);
 

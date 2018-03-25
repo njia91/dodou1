@@ -5,9 +5,9 @@
 #include <stdlib.h>
 
 
-int setupServerConnection(const int localPort);
+int setupServerConnection(const int localPort, const char* remoteIP);
 int listenForIncommingConnection(int server_fd);
 void handleConnectionSession(int connection_fd);
-void *serverMain(void *localPort);
+void *serverMain(void *inputArg);
 
 #endif
