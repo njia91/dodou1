@@ -25,70 +25,72 @@ void prepareMessage(char *packetToSend){
     }
 }
 
-void sendMessagesToServer(int client_fd){
-  bool active = true;
-  int ret;
-  char packetToSend[100];
+bool checksContentOfIncomingMessage(){
   bool shouldMessageBeForwarded = false;
-  while(ringInfo.ringActive){
-    pthread_mutex_lock(&mtxRingInfo);
-    
-		switch(ringInfo.currentPhase){
-      case NOT_STARTED:
+  int ret;
+  switch(ringInfo.currentPhase){
+    case NOT_STARTED:
+      ringInfo.participant = false;
+      shouldMessageBeForwarded = true;
+      break;
+    case ELECTION:
+      ret = strcmp(ringInfo.receivedMessage, ringInfo.highestId);
+      if(ret > 0 ){
+        ringInfo.participant = true;
+        ringInfo.highestId = ringInfo.receivedMessage;
+        shouldMessageBeForwarded = true;
+      }
+      else if (ret < 0 && ringInfo.participant == true){
+        shouldMessageBeForwarded = false;
+      }
+      else if ( ret < 0 && ringInfo.participant == false){
+        shouldMessageBeForwarded = true;
+        ringInfo.participant = true;
+      }
+      else if ( ret == 0){
+        ringInfo.currentPhase = ELECTION_OVER;
         ringInfo.participant = false;
         shouldMessageBeForwarded = true;
-        break;
-      case ELECTION:
-        ret = strcmp(ringInfo.receivedMessage, ringInfo.highestId);
-        if(ret > 0 ){
-          shouldMessageBeForwarded = true;
-          ringInfo.participant = true;
-          ringInfo.highestId = ringInfo.receivedMessage;
-        }
-        else if (ret < 0 && ringInfo.participant == true){
-          shouldMessageBeForwarded = false;
-        }
-        else if ( ret < 0 && ringInfo.participant == false){
-          shouldMessageBeForwarded = true;
-          ringInfo.participant = true;
-        }
-        else if ( ret == 0){
-          ringInfo.currentPhase = ELECTION_OVER;
-          ringInfo.participant = false;
-          shouldMessageBeForwarded = true;
-        }
-        break;
-      case ELECTION_OVER:
-        if ( strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
-          ringInfo.currentPhase = MESSAGE;
-        }
-        shouldMessageBeForwarded = true;
-        break;
-      case MESSAGE:
-				ringInfo.message = ringInfo.receivedMessage;
-      	shouldMessageBeForwarded = true;
-				break;
-      default:
-		 		fprintf(stderr, "client.cc - Unknown phase - Should not happen.\n");
-        ringInfo.ringActive = false;
-				break;
-    }
+      }
+      break;
+    case ELECTION_OVER:
+      if ( strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
+        ringInfo.currentPhase = MESSAGE;
+      }
+      shouldMessageBeForwarded = true;
+      break;
+    case MESSAGE:
+      ringInfo.message = ringInfo.receivedMessage;
+      shouldMessageBeForwarded = true;
+      break;
+    default:
+      fprintf(stderr, "client.cc: Unknown phase - Should not happen.\n");
+      ringInfo.ringActive = false;
+      break;
+  }
+  return shouldMessageBeForwarded;
+}
 
-    if(shouldMessageBeForwarded){
-        memset(packetToSend, 0, PACKET_SIZE);
+void forwardMessages(int client_fd){
+  bool active = true;
+  char packetToSend[100];
+  while(active){
+    pthread_mutex_lock(&mtxRingInfo);
+    if(checksContentOfIncomingMessage()){
+        memset(packetToSend, '\0', PACKET_SIZE);
         prepareMessage(packetToSend);
         if((send(client_fd, packetToSend, sizeof(packetToSend), 0)) == -1){
 					fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
-					active = false;
+					ringInfo.ringActive = false;
 				}
     }
-
-		if(active){
-    	memset(ringInfo.receivedMessage, 0, sizeof(ringInfo.receivedMessage));
+		if(ringInfo.ringActive){
     	pthread_cond_wait(&newMessage, &mtxRingInfo);
-    	pthread_mutex_unlock(&mtxRingInfo);
-			//sleep(2);
-		}
+		} else {
+      active = false;
+    }
+    pthread_mutex_unlock(&mtxRingInfo);
+    sleep(2);
   }
 }
 
@@ -96,37 +98,37 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
   int client_fd;
   char portId[15];
   sprintf(portId, "%d", remotePort);
-  struct addrinfo hints;
-  memset(&hints,0,sizeof(hints));
-
-  fillinAddrInfo(remoteAdress, remotePort, &hints);
   struct addrinfo* result=0;
-
-  int err = getaddrinfo(remoteAdress, portId,&hints,&result);
-  if (err != 0) {
-      die(gai_strerror(err));
-  }
+  fillinAddrInfo(&result, remotePort, remoteAdress, AI_ADDRCONFIG);
 
   client_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
   if (client_fd ==-1){
+    freeaddrinfo(result);
     die(strerror(errno));
   }
 
-  while(connect(client_fd, result->ai_addr, result->ai_addrlen) == -1){
-    fprintf(stderr, "Unable to connect - Will retry to connect: "
+  while(connect(client_fd, result->ai_addr, result->ai_addrlen) == -1 && client_fd != -1){
+    fprintf(stderr, "Unable to connect - Will retry to connect. "
                     "Errno: %s \n", strerror(errno));
-    sleep(2);
+
+    pthread_mutex_lock(&mtxRingInfo);
+    //If ring is broken, do not bother to reconnect
+    if (ringInfo.ringActive == false){
+      client_fd = -1;
+    }
+    pthread_mutex_unlock(&mtxRingInfo);
+    sleep(3);
   }
-
-
   freeaddrinfo(result);
-
   return client_fd;
-
 }
 
-void clientMain(const char *remoteAdress, const int remotePort){
-  int client_fd = setupConnectionToServer(remoteAdress, remotePort);
-  sendMessagesToServer(client_fd);
-}
+void *clientMain(void *coliArg){
+  nodeArg args = * (nodeArg *) coliArg;
+  int client_fd = setupConnectionToServer(args.remoteIP, args.remotePort);
 
+  if (client_fd != -1){
+    forwardMessages(client_fd);
+  }
+  pthread_exit(NULL);
+}

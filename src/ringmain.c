@@ -8,20 +8,21 @@ extern pthread_cond_t newMessage;
 extern pthread_mutex_t mtxRingInfo;
 extern ringInformation ringInfo;
 
-struct addrinfo* fillinAddrInfo(const char* host, const int portNo,
-                                struct addrinfo *hints){
-  hints->ai_family=AF_UNSPEC;
-  hints->ai_socktype=SOCK_STREAM;
-  hints->ai_protocol=0;
-  hints->ai_flags=AI_ADDRCONFIG;
-  return hints;
-}
+void fillinAddrInfo(struct addrinfo **result, const int localPort,
+                    const char* IPAdress, int flags){
+  char portId[15];
+  sprintf(portId, "%d", localPort);
+  struct addrinfo hints;
+  memset(&hints,0,sizeof(hints));
+  hints.ai_family=AF_UNSPEC;
+  hints.ai_socktype=SOCK_STREAM;
+  hints.ai_protocol=0;
+  hints.ai_flags=flags;
 
-void sigIntHandler(int sig){
-	pthread_mutex_lock(&mtxRingInfo);
-	ringInfo.ringActive = false;
-	pthread_cond_broadcast(&newMessage);
-	pthread_mutex_unlock(&mtxRingInfo);
+  int err = getaddrinfo(IPAdress, portId , &hints, result);
+  if (err != 0) {
+      die(gai_strerror(err));
+  }
 }
 
 void parseArgs(int argc, char **argv, nodeArg *colArg){
@@ -65,13 +66,13 @@ int getFQDN(char *fqdn, size_t n){
 
 int main(int argc, char **argv){
   nodeArg inputArg;
-  fprintf(stdout, "Starting program\n"); 
-  pthread_t serverThread;
+  fprintf(stdout, "Starting program\n");
+  pthread_t clientThread;
   ringInfo.participant = false;
 
   pthread_mutex_init(&mtxRingInfo, NULL);
   pthread_cond_init(&newMessage, NULL);
-	signal(SIGINT, sigIntHandler);
+//	signal(SIGINT, sigIntHandler);
 
   char ownFQDN[256];
   if(getFQDN(ownFQDN, 256)){
@@ -80,20 +81,21 @@ int main(int argc, char **argv){
 
   ownFQDN[strlen(ownFQDN)] = ',';
   ringInfo.ownId = strncat(ownFQDN, argv[1], strlen(ownFQDN));
-  ringInfo.ownId[strlen(ringInfo.ownId)+1] = '\n';
+  ringInfo.ownId[strlen(ringInfo.ownId)] = '\n';
   ringInfo.highestId =  ringInfo.ownId;
   ringInfo.message = "Mian sending a message....\n";
   ringInfo.currentPhase = NOT_STARTED;
   ringInfo.ringActive = true;
+
 	parseArgs(argc, argv, &inputArg);
-  int ret = pthread_create(&serverThread, NULL, serverMain, (void *) &inputArg);
+  int ret = pthread_create(&clientThread, NULL, clientMain, (void *) &inputArg);
   if (ret){
     die(strerror(errno));
   }
 
-  clientMain(inputArg.remoteIP, inputArg.remotePort);
+  serverMain(inputArg.localPort);
 
-  pthread_join(serverThread, NULL);
+  pthread_join(clientThread, NULL);
 	pthread_mutex_destroy(&mtxRingInfo);
   pthread_cond_destroy(&newMessage);
 

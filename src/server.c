@@ -17,22 +17,14 @@ int listenForIncommingConnection(int server_fd){
   return connection_fd;
 }
 
-int setupServerConnection(const int localPort, const char* remoteIP){
-  //Setup server connection
+int setupServerConnection(const int localPort){
   int server_fd;
-  char portId[15];
-  sprintf(portId, "%d", localPort);
-  struct addrinfo hints;
-  memset(&hints,0,sizeof(hints));
-  fillinAddrInfo("0", localPort, &hints);
   struct addrinfo* result=0;
-  int err = getaddrinfo(remoteIP, portId,&hints,&result);
-  if (err!=0) {
-      die(gai_strerror(err));
-  }
+
+  fillinAddrInfo(&result, localPort, NULL, AI_PASSIVE);
 
   server_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-  if (server_fd ==-1){
+  if (server_fd == -1){
     die(strerror(errno));
   }
 
@@ -44,7 +36,6 @@ int setupServerConnection(const int localPort, const char* remoteIP){
   if(bind(server_fd, result->ai_addr, result->ai_addrlen) == -1){
     die(strerror(errno));
   }
-
   freeaddrinfo(result);
 
   if (listen(server_fd, SOMAXCONN)){
@@ -53,47 +44,58 @@ int setupServerConnection(const int localPort, const char* remoteIP){
   return server_fd;
 }
 
+void verifyCurrentRingPhase(char *buffer){
+  for (int i = 0; i < strlen(buffer) && buffer[i] != '\0'; i++){
+    if(buffer[i] == '\n'){
+      if(!(strncmp(buffer, ELECTION_STR, i))){
+        ringInfo.currentPhase = ELECTION;
+      }else if(!(strncmp(buffer, ELECTION_OVER_STR, i))){
+        ringInfo.currentPhase = ELECTION_OVER;
+      }else if(!(strncmp(buffer, MESSAGE_STR, i))){
+        ringInfo.currentPhase = MESSAGE;
+      } else{
+        fprintf(stderr, "Invalid Message formate - Read the instructions...\n");
+        ringInfo.ringActive = false;
+      }
+      memset(ringInfo.receivedMessage, '\0', sizeof(ringInfo.receivedMessage));
+      strncpy(ringInfo.receivedMessage, &buffer[i + 1], strlen(&buffer[i + 1]));
+      break;
+    }
+  }
+}
+
 void handleConnectionSession(int connection_fd){
   char buffer[100];
+  bool active = true;
   int ret;
-
-  while (ringInfo.ringActive){
-    memset(buffer, 0, PACKET_SIZE);
-
+  int messageCount = 0;
+  while (active){
+    memset(buffer, '\0', PACKET_SIZE);
     ret = recv(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
     pthread_mutex_lock(&mtxRingInfo);
     if (ret < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)){
       fprintf(stderr," recv return error value: %s", strerror(errno));
       ringInfo.ringActive = false;
     } else if(ret >= 0){
-      printf("Received message:: %s", buffer);
-      for (int i = 0; i < strlen(buffer) && buffer[i] != '\0'; i++){
-        if(buffer[i] == '\n'){
-          if(!(strncmp(buffer, ELECTION_STR, i))){
-            ringInfo.currentPhase = ELECTION;
-          }else if(!(strncmp(buffer, ELECTION_OVER_STR, i))){
-            ringInfo.currentPhase = ELECTION_OVER;
-          }else if(!(strncmp(buffer, MESSAGE_STR, i))){
-            ringInfo.currentPhase = MESSAGE;
-          } else{
-            fprintf(stderr, "Invalid Message formate - Read the instructions...\n");
-						ringInfo.ringActive = false;
-          }
-          strncpy(ringInfo.receivedMessage, &buffer[i + 1], strlen(&buffer[i + 1]));
-          break;
-        }
-      }
+      printf("\nReceived message No. %d:\n%s", messageCount, buffer);
+      // Checks current phase
+      verifyCurrentRingPhase(buffer);
+      // Notifes client of incoming message.
   		pthread_cond_broadcast(&newMessage);
+      messageCount++;
+    }
+
+    if(!ringInfo.ringActive){
+      active = false;
     }
     pthread_mutex_unlock(&mtxRingInfo);
+
   }
 }
 
-void *serverMain(void *inputArg){
-	nodeArg arg = *(nodeArg *) inputArg;
-  int server_fd = setupServerConnection( arg.remotePort, arg.remoteIP);
+void serverMain(int localPort){
+  int server_fd = setupServerConnection(localPort);
   int connection_fd = listenForIncommingConnection(server_fd);
   handleConnectionSession(connection_fd);
 
-  pthread_exit(NULL);
 }

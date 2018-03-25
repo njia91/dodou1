@@ -1,3 +1,13 @@
+/**
+Author: Michael Andersson
+Date : 2018-03-25
+
+Functions in this file sets up and maintains the server side.
+of the ring implementation based on Chang and Roberts algorithm.
+
+The functions are fairly self-explanatory.
+
+**/
 #ifndef __RING
 #define __RING
 #define _DEFAULT_SOURCE
@@ -33,6 +43,7 @@ typedef struct {
   int remotePort;
 } nodeArg;
 
+// Used for client and server communication.
 typedef struct {
   phase currentPhase;
   bool participant;
@@ -47,18 +58,29 @@ pthread_cond_t newMessage;
 pthread_mutex_t mtxRingInfo;
 ringInformation ringInfo;
 
-
 //Error printing Function
 void die(const char* message);
 
+/*
+* Parses argument from command line.
+*/
 void parseArgs(int argc, char **argv, nodeArg *colArg);
 
-
+/*
+* Catches SIG_INT(CTRL + C) - cleans up resources and
+* terminates the program.
+*/
 void sigIntHandler(int sig);
 
+/*
+* Gets the fully qualified domain name (FQDN) for the computer.
+*/
 int getFQDN(char *fqdn, size_t n);
 
-struct addrinfo* fillinAddrInfo(const char* host, const int portNo,
-                                struct addrinfo *hints);
+/*
+* Fills in addrInfo struct with common info for both client and server.
+*/
+void fillinAddrInfo(struct addrinfo **result, const int localPort,
+                    const char* IPAdress, int flags);
 
 #endif
