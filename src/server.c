@@ -73,24 +73,29 @@ void handleConnectionSession(int connection_fd){
     memset(buffer, '\0', PACKET_SIZE);
     ret = recv(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
     pthread_mutex_lock(&mtxRingInfo);
-    if (ret < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)){
+
+    if (ret == 0){
+      fprintf(stderr, "Socket peer has performed a shuwdown."
+                      "terminating ring \n");
+      ringInfo.ringActive = false;
+    } else if (ret < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)){
       fprintf(stderr," recv return error value: %s", strerror(errno));
       ringInfo.ringActive = false;
-    } else if(ret >= 0){
+    } else if(ret > 0){
       printf("\nReceived message No. %d:\n%s", messageCount, buffer);
-      // Checks current phase
       verifyCurrentRingPhase(buffer);
       // Notifes client of incoming message.
   		pthread_cond_broadcast(&newMessage);
       messageCount++;
     }
-
+    sleep(1);
     if(!ringInfo.ringActive){
+      pthread_cond_broadcast(&newMessage);
       active = false;
     }
     pthread_mutex_unlock(&mtxRingInfo);
-
   }
+
 }
 
 void serverMain(int localPort){
