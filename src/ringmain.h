@@ -41,6 +41,7 @@ typedef struct {
   int localPort;
   char *remoteIP;
   int remotePort;
+  char *message;
 } nodeArg;
 
 // Used for client and server communication.

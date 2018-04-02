@@ -88,7 +88,6 @@ void handleConnectionSession(int connection_fd){
   		pthread_cond_broadcast(&newMessage);
       messageCount++;
     }
-    sleep(1);
     if(!ringInfo.ringActive){
       pthread_cond_broadcast(&newMessage);
       active = false;

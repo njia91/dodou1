@@ -26,13 +26,18 @@ void fillinAddrInfo(struct addrinfo **result, const int localPort,
 }
 
 void parseArgs(int argc, char **argv, nodeArg *colArg){
-  if (argc < 4){
-    die("Too few Arguments \n"
+  if (argc < 4 || argc > 5){
+    die("Too few or too many Arguments \n"
           "<ProgramName> [localPort] [remote IP Adress] [remote Port]\n");
   }
   colArg->localPort = htons(atoi(argv[1]));
   colArg->remoteIP = argv[2];
   colArg->remotePort = htons(atoi(argv[3]));
+  if(argc == 5){
+    colArg->message = argv[4];
+  }else {
+    colArg->message = NULL;
+  }
 }
 
 void die(const char* message){
@@ -69,10 +74,9 @@ int main(int argc, char **argv){
   fprintf(stdout, "Starting program\n");
   pthread_t clientThread;
   ringInfo.participant = false;
-
+  parseArgs(argc, argv, &inputArg);
   pthread_mutex_init(&mtxRingInfo, NULL);
   pthread_cond_init(&newMessage, NULL);
-//	signal(SIGINT, sigIntHandler);
 
   char ownFQDN[256];
   if(getFQDN(ownFQDN, 256)){
@@ -83,11 +87,15 @@ int main(int argc, char **argv){
   ringInfo.ownId = strncat(ownFQDN, argv[1], strlen(ownFQDN));
   ringInfo.ownId[strlen(ringInfo.ownId)] = '\n';
   ringInfo.highestId =  ringInfo.ownId;
-  ringInfo.message = "Mian sending a message....\n";
+  if (inputArg.message != NULL){
+      ringInfo.message = inputArg.message;
+  } else {
+    ringInfo.message = "Mian sending message\n";
+  }
   ringInfo.currentPhase = NOT_STARTED;
   ringInfo.ringActive = true;
 
-	parseArgs(argc, argv, &inputArg);
+
   int ret = pthread_create(&clientThread, NULL, clientMain, (void *) &inputArg);
   if (ret){
     die(strerror(errno));
