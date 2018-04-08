@@ -1,7 +1,11 @@
 CC=gcc
 
-SRCS = $(wildcard src/*.c)
-OUT_MAIN=ring
+SRCSTCP = $(wildcard src-tcp/*)
+SRCSUDP = $(wildcard src-udp/*)
+
+OUT_MAINTCP=ringTcp
+OUT_MAINUDP=ringUdp
+
 
 
 CFLAGS = -std=c99 -Wall -Werror -D_POSIX_C_SOURCE=200112L -lpthread -pthread 
@@ -14,12 +18,15 @@ CFLAGS = -std=c99 -Wall -Werror -D_POSIX_C_SOURCE=200112L -lpthread -pthread
 
 #-Wmissing-prototypes
 #
-all: ring.o
+tcp: ringTcp.o
 
+udp: ringUdp.o
 
+ringUdp.o:  $(SRCSUDP)
+	$(CC) $(CFLAGS) $(SRCSUDP) -o $(OUT_MAINUDP) -g
 
-ring.o:  $(SRCS)
-	$(CC) $(CFLAGS) $(SRCS) -o $(OUT_MAIN) -g
+ringTcp.o:  $(SRCSTCP)
+	$(CC) $(CFLAGS) $(SRCSTCP) -o $(OUT_MAINTCP) -g
 
 clean:
 	rm -f *.o *.o core

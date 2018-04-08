@@ -71,20 +71,23 @@ bool checksContentOfIncomingMessage(){
   return shouldMessageBeForwarded;
 }
 
-void forwardMessages(int client_fd){
+void forwardMessages(serverInfo sInfo){
   bool active = true;
   char packetToSend[100];
   while(active){
+    printf("Client loop \n");
     pthread_mutex_lock(&mtxRingInfo);
     if(checksContentOfIncomingMessage()){
         memset(packetToSend, '\0', PACKET_SIZE);
         prepareMessage(packetToSend);
-        if((send(client_fd, packetToSend, sizeof(packetToSend), 0)) == -1){
+        if((sendto(sInfo.socket_fd, packetToSend, sizeof(packetToSend), 0, 
+                  (struct sockaddr*) &sInfo.serveraddr, sInfo.serveraddrLen)) == -1){
 					fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
 					ringInfo.ringActive = false;
 				}
     }
 		if(ringInfo.ringActive){
+      printf("Goint to sleep\n");
     	pthread_cond_wait(&newMessage, &mtxRingInfo);
 		} else {
       active = false;
@@ -92,9 +95,10 @@ void forwardMessages(int client_fd){
     pthread_mutex_unlock(&mtxRingInfo);
     sleep(2);
   }
+  printf("Acslutar client stuff\n");
 }
 
-int setupConnectionToServer(const char *remoteAdress, const int remotePort){
+serverInfo createUdpSocket(const char *remoteAdress, const int remotePort){
   int client_fd;
   char portId[15];
   sprintf(portId, "%d", remotePort);
@@ -106,30 +110,21 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
     freeaddrinfo(result);
     die(strerror(errno));
   }
-
-  while(connect(client_fd, result->ai_addr, result->ai_addrlen) == -1){
-    fprintf(stderr, "Unable to connect - Will retry to connect. "
-                    "Errno: %s \n", strerror(errno));
-
-    pthread_mutex_lock(&mtxRingInfo);
-    //If ring is broken, do not bother to reconnect
-    if (ringInfo.ringActive == false){
-      client_fd = -1;
-    }
-    pthread_mutex_unlock(&mtxRingInfo);
-    sleep(3);
-  }
+  serverInfo sInfo;
+  sInfo.serveraddr = *result->ai_addr;
+  sInfo.serveraddrLen = result->ai_addrlen;
+  sInfo.socket_fd = client_fd;
   freeaddrinfo(result);
-  return client_fd;
+  return sInfo;
 }
 
 void *clientMain(void *coliArg){
   nodeArg args = * (nodeArg *) coliArg;
-  int client_fd = setupConnectionToServer(args.remoteIP, args.remotePort);
+  serverInfo sInfo = createUdpSocket(args.remoteIP, args.remotePort);
 
-  if (client_fd != -1){
-    forwardMessages(client_fd);
+  if (sInfo.socket_fd != -1){
+    forwardMessages(sInfo);
   }
-  close(client_fd);
+  close(sInfo.socket_fd);
   pthread_exit(NULL);
 }

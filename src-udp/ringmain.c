@@ -15,10 +15,9 @@ void fillinAddrInfo(struct addrinfo **result, const int localPort,
   struct addrinfo hints;
   memset(&hints,0,sizeof(hints));
   hints.ai_family=AF_UNSPEC;
-  hints.ai_socktype=SOCK_STREAM;
+  hints.ai_socktype=SOCK_DGRAM;
   hints.ai_protocol=0;
   hints.ai_flags=flags;
-
   int err = getaddrinfo(IPAdress, portId , &hints, result);
   if (err != 0) {
       die(gai_strerror(err));
@@ -87,7 +86,6 @@ int main(int argc, char **argv){
   ringInfo.ownId = strncat(ownFQDN, argv[1], strlen(ownFQDN));
   ringInfo.ownId[strlen(ringInfo.ownId)] = '\n';
   ringInfo.highestId =  ringInfo.ownId;
-  
   if (inputArg.message != NULL){
       ringInfo.message = inputArg.message;
   } else {

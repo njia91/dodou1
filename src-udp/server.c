@@ -4,21 +4,7 @@
 #include <stdbool.h>
 #include "server.h"
 
-int listenForIncommingConnection(int server_fd){
-  int connection_fd;
-  printf("Listening for connections..\n");
-  while((connection_fd = accept (server_fd, 0, 0)) == -1){
-      if (errno == EAGAIN ){
-        fprintf(stderr, "%s",strerror(errno));
-      } else {
-        die(strerror(errno));
-
-      }
-  }
-  return connection_fd;
-}
-
-int setupServerConnection(const int localPort){
+int setupUdpServerSocket(const int localPort){
   int server_fd;
   struct addrinfo* result=0;
 
@@ -29,21 +15,12 @@ int setupServerConnection(const int localPort){
     die(strerror(errno));
   }
 
-  int resueaddr=1;
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(resueaddr), sizeof(&resueaddr)) == -1){
-    close(server_fd);
-    die(strerror(errno));
-  }
-
   if(bind(server_fd, result->ai_addr, result->ai_addrlen) == -1){
     close(server_fd);
     die(strerror(errno));
   }
   freeaddrinfo(result);
 
-  if (listen(server_fd, SOMAXCONN)){
-    die(strerror(errno));
-  }
   return server_fd;
 }
 
@@ -68,13 +45,17 @@ void verifyCurrentRingPhase(char *buffer){
 }
 
 void handleConnectionSession(int connection_fd){
+  struct sockaddr_in senderAddr;
+  socklen_t senderAddrLen = sizeof(senderAddr);
   char buffer[100];
   bool active = true;
   int ret;
   int messageCount = 0;
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
-    ret = recv(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
+    memset(&senderAddr, 0, senderAddrLen);
+    ret = recvfrom(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT,
+                  (struct sockaddr*) &senderAddr, &senderAddrLen);
     pthread_mutex_lock(&mtxRingInfo);
 
     if (ret == 0){
@@ -101,9 +82,7 @@ void handleConnectionSession(int connection_fd){
 }
 
 void serverMain(int localPort){
-  int server_fd = setupServerConnection(localPort);
-  int connection_fd = listenForIncommingConnection(server_fd);
-  handleConnectionSession(connection_fd);
+  int server_fd = setupUdpServerSocket(localPort);
+  handleConnectionSession(server_fd);
   close(server_fd);
-  close(connection_fd);
 }
