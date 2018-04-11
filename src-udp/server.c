@@ -54,7 +54,7 @@ void handleConnectionSession(int connection_fd){
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
     memset(&senderAddr, 0, senderAddrLen);
-    ret = recvfrom(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT,
+    ret = recvfrom(connection_fd, buffer, sizeof(buffer), 0,
                   (struct sockaddr*) &senderAddr, &senderAddrLen);
     pthread_mutex_lock(&mtxRingInfo);
 
@@ -72,6 +72,11 @@ void handleConnectionSession(int connection_fd){
   		pthread_cond_broadcast(&newMessage);
       messageCount++;
     }
+
+    if(ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION){
+      pthread_cond_broadcast(&newMessage);
+    }
+
     if(!ringInfo.ringActive){
       pthread_cond_broadcast(&newMessage);
       active = false;

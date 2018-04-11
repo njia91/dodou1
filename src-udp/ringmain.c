@@ -34,6 +34,9 @@ void parseArgs(int argc, char **argv, nodeArg *colArg){
   colArg->remotePort = htons(atoi(argv[3]));
   if(argc == 5){
     colArg->message = argv[4];
+    colArg->message[strlen(argv[4] + 1)] = '\n';
+    colArg->message[strlen(argv[4]) + 2] = '\0';
+
   }else {
     colArg->message = NULL;
   }

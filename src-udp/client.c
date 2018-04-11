@@ -86,10 +86,7 @@ void forwardMessages(serverInfo sInfo){
 					ringInfo.ringActive = false;
 				}
     }
-		if(ringInfo.ringActive){
-      printf("Goint to sleep\n");
-    	pthread_cond_wait(&newMessage, &mtxRingInfo);
-		} else {
+		if(!ringInfo.ringActive){
       active = false;
     }
     pthread_mutex_unlock(&mtxRingInfo);
