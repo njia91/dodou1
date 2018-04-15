@@ -3,8 +3,8 @@ CC=gcc
 SRCSTCP = $(wildcard src-tcp/*)
 SRCSUDP = $(wildcard src-udp/*)
 
-OUT_MAINTCP=ringTcp
-OUT_MAINUDP=ringUdp
+OUT_MAINTCP=tcpNode
+OUT_MAINUDP=udpNode
 
 
 
