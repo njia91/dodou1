@@ -57,7 +57,7 @@ void verifyCurrentRingPhase(char *buffer){
       }else if(!(strncmp(buffer, MESSAGE_STR, i))){
         ringInfo.currentPhase = MESSAGE;
       } else{
-        fprintf(stderr, "Invalid Message formate - Read the instructions...\n");
+        fprintf(stderr, "Invalid Message format - Read the instructions...\n");
         ringInfo.ringActive = false;
       }
       memset(ringInfo.receivedMessage, '\0', sizeof(ringInfo.receivedMessage));
@@ -78,7 +78,7 @@ void handleConnectionSession(int connection_fd){
     pthread_mutex_lock(&mtxRingInfo);
 
     if (ret == 0){
-      fprintf(stderr, "Socket peer has performed a shuwdown."
+      fprintf(stderr, "Socket peer has performed a shutdown."
                       "terminating ring \n");
       ringInfo.ringActive = false;
     } else if (ret < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)){

@@ -79,6 +79,7 @@ int main(int argc, char **argv){
   pthread_cond_init(&newMessage, NULL);
 
   char ownFQDN[256];
+  memset(ownFQDN, null, 256);
   if(getFQDN(ownFQDN, 256)){
     die("Could not retrieve node FQDN. Terminating\n");
   }
@@ -96,14 +97,12 @@ int main(int argc, char **argv){
   ringInfo.currentPhase = NOT_STARTED;
   ringInfo.ringActive = true;
 
-
   int ret = pthread_create(&clientThread, NULL, clientMain, (void *) &inputArg);
   if (ret){
     die(strerror(errno));
   }
 
   serverMain(inputArg.localPort);
-
   pthread_join(clientThread, NULL);
 	pthread_mutex_destroy(&mtxRingInfo);
   pthread_cond_destroy(&newMessage);

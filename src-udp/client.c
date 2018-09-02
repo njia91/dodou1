@@ -1,28 +1,28 @@
 #include "client.h"
 
 void prepareMessage(char *packetToSend){
-    switch(ringInfo.currentPhase){
-      case NOT_STARTED:
-        strncpy(packetToSend, ELECTION_STR, strlen(ELECTION_STR));
-        strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
-        break;
-      case ELECTION:
-        strncpy(packetToSend, ELECTION_STR, strlen(ELECTION_STR));
-        strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
-        break;
-      case ELECTION_OVER:
-        strncpy(packetToSend, ELECTION_OVER_STR, strlen(ELECTION_OVER_STR));
-        strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
-      	break;
-      case MESSAGE:
-      	strncpy(packetToSend, MESSAGE_STR, strlen(MESSAGE_STR));
-      	strncat(packetToSend, ringInfo.message, strlen(ringInfo.message));
-        break;
-      default:
-				fprintf(stderr, "Invalid phase, should not happen\n");
-        ringInfo.ringActive = false;
-        break;
-    }
+  switch(ringInfo.currentPhase){
+    case NOT_STARTED:
+      strncpy(packetToSend, ELECTION_STR, strlen(ELECTION_STR) + 1);
+      strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
+      break;
+    case ELECTION:
+      strncpy(packetToSend, ELECTION_STR, strlen(ELECTION_STR) + 1);
+      strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
+      break;
+    case ELECTION_OVER:
+      strncpy(packetToSend, ELECTION_OVER_STR, strlen(ELECTION_OVER_STR) + 1);
+      strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
+      break;
+    case MESSAGE:
+      strncpy(packetToSend, MESSAGE_STR, strlen(MESSAGE_STR) + 1);
+      strncat(packetToSend, ringInfo.message, strlen(ringInfo.message));
+      break;
+    default:
+      fprintf(stderr, "Invalid phase, should not happen\n");
+      ringInfo.ringActive = false;
+      break;
+  }
 }
 
 bool checksContentOfIncomingMessage(){
