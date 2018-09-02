@@ -7,7 +7,8 @@
 int listenForIncommingConnection(int server_fd){
   int connection_fd;
   printf("Listening for connections..\n");
-  while((connection_fd = accept (server_fd, 0, 0)) == -1){
+  // Listen for ONE incoming connection.
+  while((connection_fd = accept(server_fd, 0, 0)) == -1){
       if (errno == EAGAIN ){
         fprintf(stderr, "%s",strerror(errno));
       } else {
@@ -29,6 +30,7 @@ int setupServerConnection(const int localPort){
     die(strerror(errno));
   }
 
+  // Allow reuse of local addresses.
   int resueaddr=1;
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(resueaddr), sizeof(&resueaddr)) == -1){
     close(server_fd);
@@ -47,6 +49,8 @@ int setupServerConnection(const int localPort){
   return server_fd;
 }
 
+// Checks the incoming packet to see which STATE the ring is in.
+// Copies the message and stores it for client to use.
 void verifyCurrentRingPhase(char *buffer){
   for (int i = 0; i < strlen(buffer) && buffer[i] != '\0'; i++){
     if(buffer[i] == '\n'){
@@ -77,6 +81,7 @@ void handleConnectionSession(int connection_fd){
     ret = recv(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
     pthread_mutex_lock(&mtxRingInfo);
 
+    // Socket peer has shutdown the connection.
     if (ret == 0){
       fprintf(stderr, "Socket peer has performed a shutdown."
                       "terminating ring \n");
@@ -91,6 +96,7 @@ void handleConnectionSession(int connection_fd){
   		pthread_cond_broadcast(&newMessage);
       messageCount++;
     }
+    // If error or shutdown is initiated - Notify client and terminate program.
     if(!ringInfo.ringActive){
       pthread_cond_broadcast(&newMessage);
       active = false;

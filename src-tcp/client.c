@@ -76,13 +76,14 @@ void forwardMessages(int client_fd){
   char packetToSend[100];
   while(active){
     pthread_mutex_lock(&mtxRingInfo);
-    if(checksContentOfIncomingMessage()){
-        memset(packetToSend, '\0', PACKET_SIZE);
-        prepareMessage(packetToSend);
-        if((send(client_fd, packetToSend, sizeof(packetToSend), 0)) == -1){
-					fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
-					ringInfo.ringActive = false;
-				}
+    if(checksContentOfIncomingMessage()) {
+      // Repackage the packet and send message.
+      memset(packetToSend, '\0', PACKET_SIZE);
+      prepareMessage(packetToSend);
+      if ((send(client_fd, packetToSend, sizeof(packetToSend), 0)) == -1) {
+        fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
+        ringInfo.ringActive = false;
+      }
     }
 		if(ringInfo.ringActive){
     	pthread_cond_wait(&newMessage, &mtxRingInfo);
@@ -97,6 +98,8 @@ void forwardMessages(int client_fd){
 int setupConnectionToServer(const char *remoteAdress, const int remotePort){
   int client_fd;
   char portId[15];
+
+  // Convert Port to String
   sprintf(portId, "%d", remotePort);
   struct addrinfo* result=0;
   fillinAddrInfo(&result, remotePort, remoteAdress, AI_ADDRCONFIG);
@@ -107,6 +110,7 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
     die(strerror(errno));
   }
 
+  // Try to connect to Server. Retry if unsuccessful.
   while(connect(client_fd, result->ai_addr, result->ai_addrlen) == -1){
     fprintf(stderr, "Unable to connect - Will retry to connect. "
                     "Errno: %s \n", strerror(errno));
