@@ -81,7 +81,7 @@ int main(int argc, char **argv){
   pthread_cond_init(&newMessage, NULL);
 
   char ownFQDN[256];
-  memset(ownFQDN, null, 256);
+  memset(ownFQDN, NULL, 256);
   if(getFQDN(ownFQDN, 256)){
     die("Could not retrieve node FQDN. Terminating\n");
   }
