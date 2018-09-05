@@ -80,7 +80,7 @@ void forwardMessages(serverInfo sInfo){
     if(checksContentOfIncomingMessage()){
         memset(packetToSend, '\0', PACKET_SIZE);
         prepareMessage(packetToSend);
-        if((sendto(sInfo.socket_fd, packetToSend, sizeof(packetToSend), 0, 
+        if((sendto(sInfo.socket_fd, packetToSend, PACKET_SIZE, 0,
                   (struct sockaddr*) &sInfo.serveraddr, sInfo.serveraddrLen)) == -1){
 					fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
 					ringInfo.ringActive = false;

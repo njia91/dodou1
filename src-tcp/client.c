@@ -80,7 +80,7 @@ void forwardMessages(int client_fd){
       // Repackage the packet and send message.
       memset(packetToSend, '\0', PACKET_SIZE);
       prepareMessage(packetToSend);
-      if ((send(client_fd, packetToSend, sizeof(packetToSend), 0)) == -1) {
+      if ((send(client_fd, packetToSend, PACKET_SIZE, 0)) == -1) {
         fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
         ringInfo.ringActive = false;
       }
