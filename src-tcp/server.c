@@ -74,15 +74,16 @@ void verifyCurrentRingPhase(char *buffer){
 void handleConnectionSession(int connection_fd){
   char buffer[100];
   bool active = true;
+  clock_t totalTime = 0;
   int ret;
-  int messageCount = 0;
+  int lapCount = 0;
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
     ret = recv(connection_fd, buffer, PACKET_SIZE, MSG_DONTWAIT);
     pthread_mutex_lock(&mtxRingInfo);
 
     // Check if package is smaller than what the protocol stated.
-    if (ret <= PACKET_SIZE && ret > 0){
+    if (ret < PACKET_SIZE && ret > 0){
       fprintf(stderr, "read() returned %d. Should have returned %d \n", ret, PACKET_SIZE);
     }
 
@@ -95,11 +96,16 @@ void handleConnectionSession(int connection_fd){
       fprintf(stderr," recv return error value: %s", strerror(errno));
       ringInfo.ringActive = false;
     } else if(ret > 0){
-      printf("\nReceived message No. %d:\n%s", messageCount, buffer);
       verifyCurrentRingPhase(buffer);
+      lapCount++;
+      printf("\nReceived message No. %d:\n %s", lapCount, buffer);
+      if (ringInfo.ringLeader == true){
+        totalTime = clock() - ringInfo.startTime;
+        printf("Average lap time: %lu (ms)\n", (long int) totalTime / lapCount);
+      }
+
       // Notifes client of incoming message.
   		pthread_cond_broadcast(&newMessage);
-      messageCount++;
     }
     // If error or shutdown is initiated - Notify client and terminate program.
     if(!ringInfo.ringActive){

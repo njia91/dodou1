@@ -54,8 +54,10 @@ bool checksContentOfIncomingMessage(){
       }
       break;
     case ELECTION_OVER:
-      if ( strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
+      if (strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
         ringInfo.currentPhase = MESSAGE;
+        ringInfo.ringLeader = true;
+        ringInfo.startTime = clock();
       }
       shouldMessageBeForwarded = true;
       break;
@@ -90,7 +92,6 @@ void forwardMessages(int client_fd){
       active = false;
     }
     pthread_mutex_unlock(&mtxRingInfo);
-    sleep(2);
   }
 }
 
@@ -106,6 +107,12 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
   client_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
   if (client_fd ==-1){
     freeaddrinfo(result);
+    die(strerror(errno));
+  }
+
+  int optval = 6;
+  if (setsockopt(client_fd, SOL_SOCKET, SO_PRIORITY, &optval, sizeof(int)) == -1){
+    close(client_fd);
     die(strerror(errno));
   }
 

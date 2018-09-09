@@ -56,6 +56,9 @@ bool checksContentOfIncomingMessage(){
     case ELECTION_OVER:
       if ( strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
         ringInfo.currentPhase = MESSAGE;
+        ringInfo.ringLeader = true;
+        ringInfo.startTime = clock();
+
       }
       shouldMessageBeForwarded = true;
       break;
@@ -75,7 +78,6 @@ void forwardMessages(serverInfo sInfo){
   bool active = true;
   char packetToSend[100];
   while(active){
-    printf("Client loop \n");
     pthread_mutex_lock(&mtxRingInfo);
     if(checksContentOfIncomingMessage()){
         memset(packetToSend, '\0', PACKET_SIZE);
@@ -90,7 +92,6 @@ void forwardMessages(serverInfo sInfo){
       active = false;
 		}
     pthread_mutex_unlock(&mtxRingInfo);
-    sleep(2);
   }
   printf("Terminating Client\n");
 }

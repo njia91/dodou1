@@ -14,6 +14,7 @@ The functions are fairly self-explanatory.
 
 #include "ringmain.h"
 #include <stdlib.h>
+#include <time.h>
 
 
 /*

@@ -46,20 +46,21 @@ void verifyCurrentRingPhase(char *buffer){
 void handleConnectionSession(int connection_fd){
   struct sockaddr_in senderAddr;
   socklen_t senderAddrLen = sizeof(senderAddr);
+  clock_t totalTime = 0;
   char buffer[100];
   bool active = true;
   int ret;
-  int messageCount = 0;
+  int lapCount = 0;
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
     memset(&senderAddr, 0, senderAddrLen);
-    fprintf(stderr, "rBefore RECVFROM\n");
     ret = recvfrom(connection_fd, buffer, PACKET_SIZE, 0,
                   (struct sockaddr*) &senderAddr, &senderAddrLen);
     pthread_mutex_lock(&mtxRingInfo);
 
     // Check if package is smaller than what the protocol stated.
-    if (ret <= PACKET_SIZE && ret > 0){
+    if (ret < PACKET_SIZE && ret > 0){
+      fprintf(stderr, "read() returned %d. Should have returned %d \n", ret, PACKET_SIZE);
     }
 
     if (ret == 0){
@@ -70,11 +71,16 @@ void handleConnectionSession(int connection_fd){
       fprintf(stderr," recv return error value: %s", strerror(errno));
       ringInfo.ringActive = false;
     } else if(ret > 0){
-      printf("\nReceived message No. %d:\n%s", messageCount, buffer);
+      lapCount++;
       verifyCurrentRingPhase(buffer);
-      // Notifes client of incoming message.
-  		pthread_cond_broadcast(&newMessage);
-      messageCount++;
+      printf("\nReceived message No. %d:\n%s", lapCount, buffer);
+      if (ringInfo.ringLeader == true){
+        totalTime = clock() - ringInfo.startTime;
+        printf("Average lap time: %lu (ms)\n", (long int) totalTime / lapCount);
+      }
+
+      // Notify client of incoming message.
+      pthread_cond_broadcast(&newMessage);
     }
 
     if(ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION){

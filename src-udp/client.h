@@ -15,6 +15,7 @@ The functions are fairly self explanatory.
 #include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 
 typedef struct {
   struct sockaddr serveraddr;

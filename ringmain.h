@@ -53,6 +53,8 @@ typedef struct {
   char receivedMessage[100];
   char *highestId;
   char *ownId;
+  bool ringLeader;
+  clock_t startTime;
 } ringInformation;
 
 pthread_cond_t newMessage;
