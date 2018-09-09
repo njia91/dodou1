@@ -68,12 +68,6 @@ void die(const char* message);
 void parseArgs(int argc, char **argv, nodeArg *colArg);
 
 /*
-* Catches SIG_INT(CTRL + C) - cleans up resources and
-* terminates the program.
-*/
-void sigIntHandler(int sig);
-
-/*
 * Gets the fully qualified domain name (FQDN) for the computer.
 */
 int getFQDN(char *fqdn, size_t n);

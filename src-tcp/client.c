@@ -74,19 +74,18 @@ bool checksContentOfIncomingMessage(){
 void forwardMessages(int client_fd){
   bool active = true;
   char packetToSend[100];
-  while(active){
+  while (active){
     pthread_mutex_lock(&mtxRingInfo);
-    if(checksContentOfIncomingMessage()) {
+    if (checksContentOfIncomingMessage()) {
       // Repackage the packet and send message.
       memset(packetToSend, '\0', PACKET_SIZE);
       prepareMessage(packetToSend);
       if ((send(client_fd, packetToSend, PACKET_SIZE, 0)) == -1) {
-        fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
-        ringInfo.ringActive = false;
+        fprintf(stderr, "Something is wrong with the socket: %s \n", strerror(errno));
       }
     }
-		if(ringInfo.ringActive){
-    	pthread_cond_wait(&newMessage, &mtxRingInfo);
+		if (ringInfo.ringActive){
+      pthread_cond_wait(&newMessage, &mtxRingInfo);
 		} else {
       active = false;
     }

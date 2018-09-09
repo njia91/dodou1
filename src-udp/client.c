@@ -82,17 +82,17 @@ void forwardMessages(serverInfo sInfo){
         prepareMessage(packetToSend);
         if((sendto(sInfo.socket_fd, packetToSend, PACKET_SIZE, 0,
                   (struct sockaddr*) &sInfo.serveraddr, sInfo.serveraddrLen)) == -1){
-					fprintf(stderr, "Something is wrong with the socket: %s ", strerror(errno));
-					ringInfo.ringActive = false;
-				}
+            fprintf(stderr, "Something is wrong with the socket/Connection: %s \n", strerror(errno));
+            ringInfo.ringActive = false;
+        }
     }
 		if(!ringInfo.ringActive){
       active = false;
-    }
+		}
     pthread_mutex_unlock(&mtxRingInfo);
     sleep(2);
   }
-  printf("Acslutar client stuff\n");
+  printf("Terminating Client\n");
 }
 
 serverInfo createUdpSocket(const char *remoteAdress, const int remotePort){

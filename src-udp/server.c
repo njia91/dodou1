@@ -7,7 +7,6 @@
 int setupUdpServerSocket(const int localPort){
   int server_fd;
   struct addrinfo* result=0;
-
   fillinAddrInfo(&result, localPort, NULL, AI_PASSIVE);
 
   server_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
@@ -54,9 +53,14 @@ void handleConnectionSession(int connection_fd){
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
     memset(&senderAddr, 0, senderAddrLen);
-    ret = recvfrom(connection_fd, buffer, sizeof(buffer), 0,
+    fprintf(stderr, "rBefore RECVFROM\n");
+    ret = recvfrom(connection_fd, buffer, PACKET_SIZE, 0,
                   (struct sockaddr*) &senderAddr, &senderAddrLen);
     pthread_mutex_lock(&mtxRingInfo);
+
+    // Check if package is smaller than what the protocol stated.
+    if (ret <= PACKET_SIZE && ret > 0){
+    }
 
     if (ret == 0){
       fprintf(stderr, "Socket peer has performed a shuwdown."
@@ -83,7 +87,7 @@ void handleConnectionSession(int connection_fd){
     }
     pthread_mutex_unlock(&mtxRingInfo);
   }
-
+  fprintf(stderr, "Terminating Server \n");
 }
 
 void serverMain(int localPort){

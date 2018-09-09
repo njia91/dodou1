@@ -78,8 +78,13 @@ void handleConnectionSession(int connection_fd){
   int messageCount = 0;
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
-    ret = recv(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
+    ret = recv(connection_fd, buffer, PACKET_SIZE, MSG_DONTWAIT);
     pthread_mutex_lock(&mtxRingInfo);
+
+    // Check if package is smaller than what the protocol stated.
+    if (ret <= PACKET_SIZE && ret > 0){
+      fprintf(stderr, "read() returned %d. Should have returned %d \n", ret, PACKET_SIZE);
+    }
 
     // Socket peer has shutdown the connection.
     if (ret == 0){
