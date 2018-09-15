@@ -88,6 +88,7 @@ void forwardMessages(serverInfo sInfo){
             ringInfo.ringActive = false;
         }
     }
+    printf("Seending packages UDP\n");
 
     if(ringInfo.ringActive && (ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
       pthread_cond_wait(&newMessage,  &mtxRingInfo);
@@ -97,6 +98,8 @@ void forwardMessages(serverInfo sInfo){
       active = false;
 		}
     pthread_mutex_unlock(&mtxRingInfo);
+
+
   }
   printf("Terminating Client\n");
 }

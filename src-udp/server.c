@@ -92,6 +92,8 @@ void handleConnectionSession(int connection_fd){
       active = false;
     }
     pthread_mutex_unlock(&mtxRingInfo);
+
+    sleep(3);
   }
   fprintf(stderr, "Terminating Server \n");
 }
