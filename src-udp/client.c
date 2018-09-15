@@ -88,7 +88,12 @@ void forwardMessages(serverInfo sInfo){
             ringInfo.ringActive = false;
         }
     }
-		if(!ringInfo.ringActive){
+
+    if(ringinfo.ringActive && (ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
+      pthread_cond_wait(&newMessage,  &mtxRingInfo));
+    }
+
+    if(!ringInfo.ringActive){
       active = false;
 		}
     pthread_mutex_unlock(&mtxRingInfo);

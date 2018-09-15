@@ -110,6 +110,7 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort){
     die(strerror(errno));
   }
 
+  // Used to prioritize packets from this socket.
   int optval = 6;
   if (setsockopt(client_fd, SOL_SOCKET, SO_PRIORITY, &optval, sizeof(int)) == -1){
     close(client_fd);
