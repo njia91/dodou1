@@ -29,11 +29,6 @@ typedef struct {
 serverInfo createUdpSocket(const char *remoteAdress, const int remotePort);
 
 /*
-* Prepares the next packet/message.
-*/
-void prepareMessage();
-
-/*
 * Decides which messages that should be forwarded in the ring.
 */
 void forwardMessages(serverInfo sInfo);

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "server.h"
+#include "UDPserver.h"
 
 int setupUdpServerSocket(const int localPort){
   int server_fd;
@@ -34,6 +34,7 @@ void handleConnectionSession(int connection_fd){
   while (active){
     memset(buffer, '\0', PACKET_SIZE);
     memset(&senderAddr, 0, senderAddrLen);
+
     ret = recvfrom(connection_fd, buffer, PACKET_SIZE, 0,
                   (struct sockaddr*) &senderAddr, &senderAddrLen);
     pthread_mutex_lock(&mtxRingInfo);
@@ -42,7 +43,6 @@ void handleConnectionSession(int connection_fd){
     if (ret < PACKET_SIZE && ret > 0){
       fprintf(stderr, "read() returned %d. Should have returned %d \n", ret, PACKET_SIZE);
     }
-    fprintf(stderr," SERVER TAR EMOT MEDDELANDEN \n");
 
     if (ret == 0){
       fprintf(stderr, "Socket peer has performed a shuwdown."
@@ -59,17 +59,16 @@ void handleConnectionSession(int connection_fd){
         totalTime = clock() - ringInfo.startTime;
         printf("Average lap time: %lu (ms)\n", (long int) totalTime / lapCount);
       }
+      pthread_cond_broadcast(&newMessage);
     }
 
     if(!ringInfo.ringActive){
+      pthread_cond_broadcast(&newMessage);
       active = false;
     }
 
     // Notify client of incoming message.
-    pthread_cond_broadcast(&newMessage);
     pthread_mutex_unlock(&mtxRingInfo);
-
-    sleep(2);
   }
   fprintf(stderr, "Terminating Server \n");
 }

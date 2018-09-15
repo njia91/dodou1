@@ -1,41 +1,17 @@
-#include "client.h"
+#include "UDPclient.h"
 
-void prepareMessage(char *packetToSend){
-  switch(ringInfo.currentPhase){
-    case NOT_STARTED:
-      strncpy(packetToSend, ELECTION_STR, strlen(ELECTION_STR) + 1);
-      strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
-      break;
-    case ELECTION:
-      strncpy(packetToSend, ELECTION_STR, strlen(ELECTION_STR) + 1);
-      strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
-      break;
-    case ELECTION_OVER:
-      strncpy(packetToSend, ELECTION_OVER_STR, strlen(ELECTION_OVER_STR) + 1);
-      strncat(packetToSend, ringInfo.highestId, strlen(ringInfo.highestId));
-      break;
-    case MESSAGE:
-      strncpy(packetToSend, MESSAGE_STR, strlen(MESSAGE_STR) + 1);
-      strncat(packetToSend, ringInfo.message, strlen(ringInfo.message));
-      break;
-    default:
-      fprintf(stderr, "Invalid phase, should not happen\n");
-      ringInfo.ringActive = false;
-      break;
-  }
-}
+
 
 
 void forwardMessages(serverInfo sInfo){
   bool active = true;
+  bool shortSleep = false;
   char packetToSend[100];
   while(active){
     pthread_mutex_lock(&mtxRingInfo);
-    if(shouldMessageBeForwarded()){
+    if(shouldMessageBeForwarded(true)){
       memset(packetToSend, '\0', PACKET_SIZE);
       prepareMessage(packetToSend);
-
-      printf("Seending packages UDP\n");
       if((sendto(sInfo.socket_fd, packetToSend, PACKET_SIZE, 0,
                   (struct sockaddr*) &sInfo.serveraddr, sInfo.serveraddrLen)) == -1){
         fprintf(stderr, "Something is wrong with the socket/Connection: %s \n", strerror(errno));
@@ -43,8 +19,9 @@ void forwardMessages(serverInfo sInfo){
       }
     }
 
-    if(ringInfo.ringActive && !(ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
-      printf("NU SOVER JAG !!! %d\n", ringInfo.currentPhase);
+    if(ringInfo.ringActive && (ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
+      shortSleep = true;
+    } else {
       pthread_cond_wait(&newMessage,  &mtxRingInfo);
     }
 
@@ -52,8 +29,12 @@ void forwardMessages(serverInfo sInfo){
       active = false;
 		}
     pthread_mutex_unlock(&mtxRingInfo);
+    // Before MESSAGE phase, make short sleeps to avoid spam.
+    if (shortSleep &&  ringInfo.ringActive){
+      sleep(3);
+    }
 
-    sleep(1);
+    shortSleep = false;
   }
   printf("Terminating Client\n");
 }

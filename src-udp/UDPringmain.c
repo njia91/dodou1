@@ -1,8 +1,10 @@
 // TCP Implementation
 
-#include "server.h"
+#define UDP_HACK
+
+#include "UDPserver.h"
 #include "ringmain.h"
-#include "client.h"
+#include "UDPclient.h"
 
 extern pthread_cond_t newMessage;
 extern pthread_mutex_t mtxRingInfo;
@@ -77,7 +79,6 @@ int main(int argc, char **argv){
   pthread_t clientThread;
   ringInfo.participant = false;
   ringInfo.ringLeader = false;
-  ringInfo.currentPhase = NOT_STARTED;
   parseArgs(argc, argv, &inputArg);
   pthread_mutex_init(&mtxRingInfo, NULL);
   pthread_cond_init(&newMessage, NULL);

@@ -82,18 +82,18 @@ void handleConnectionSession(int connection_fd){
         printf("Average lap time: %lu (ms)\n", (long int) totalTime / lapCount);
       }
 
+      pthread_cond_broadcast(&newMessage);
     }
 
     // If error or shutdown is initiated - Notify client and terminate program.
     if(!ringInfo.ringActive){
       active = false;
+      pthread_cond_broadcast(&newMessage);
     }
 
-    // Notifes client of incoming message.
-    pthread_cond_broadcast(&newMessage);
     pthread_mutex_unlock(&mtxRingInfo);
   }
-
+  fprintf(stderr, "Terminating Server \n");
 }
 
 void serverMain(int localPort){

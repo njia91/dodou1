@@ -26,7 +26,7 @@ tcp: ringTcp.o
 udp: ringUdp.o
 
 ringUdp.o:  $(SRCSUDP) $(RINGHEADER)
-	$(CC) $(CFLAGS) $(SRCSUDP) $(COMMONDSRC) -I. -o $(OUT_MAINUDP) -g
+	$(CC) $(COMMONDSRC) $(CFLAGS) $(SRCSUDP) -I. -o $(OUT_MAINUDP) -g
 
 ringTcp.o:  $(SRCSTCP)  $(RINGHEADER)
 	$(CC) $(CFLAGS) $(RINGHEADER) $(SRCSTCP) $(COMMONDSRC) -I. -o $(OUT_MAINTCP) -g
