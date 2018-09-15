@@ -90,7 +90,7 @@ void forwardMessages(serverInfo sInfo){
     }
     printf("Seending packages UDP\n");
 
-    if(ringInfo.ringActive && (ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
+    if(ringInfo.ringActive && !(ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
       pthread_cond_wait(&newMessage,  &mtxRingInfo);
     }
 
