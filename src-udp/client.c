@@ -25,72 +25,26 @@ void prepareMessage(char *packetToSend){
   }
 }
 
-bool checksContentOfIncomingMessage(){
-  bool shouldMessageBeForwarded = false;
-  int ret;
-  switch(ringInfo.currentPhase){
-    case NOT_STARTED:
-      ringInfo.participant = false;
-      shouldMessageBeForwarded = true;
-      break;
-    case ELECTION:
-      ret = strcmp(ringInfo.receivedMessage, ringInfo.highestId);
-      if(ret > 0 ){
-        ringInfo.participant = true;
-        ringInfo.highestId = ringInfo.receivedMessage;
-        shouldMessageBeForwarded = true;
-      }
-      else if (ret < 0 && ringInfo.participant == true){
-        shouldMessageBeForwarded = false;
-      }
-      else if ( ret < 0 && ringInfo.participant == false){
-        shouldMessageBeForwarded = true;
-        ringInfo.participant = true;
-      }
-      else if ( ret == 0){
-        ringInfo.currentPhase = ELECTION_OVER;
-        ringInfo.participant = false;
-        shouldMessageBeForwarded = true;
-      }
-      break;
-    case ELECTION_OVER:
-      if ( strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
-        ringInfo.currentPhase = MESSAGE;
-        ringInfo.ringLeader = true;
-        ringInfo.startTime = clock();
-
-      }
-      shouldMessageBeForwarded = true;
-      break;
-    case MESSAGE:
-      ringInfo.message = ringInfo.receivedMessage;
-      shouldMessageBeForwarded = true;
-      break;
-    default:
-      fprintf(stderr, "client.cc: Unknown phase - Should not happen.\n");
-      ringInfo.ringActive = false;
-      break;
-  }
-  return shouldMessageBeForwarded;
-}
 
 void forwardMessages(serverInfo sInfo){
   bool active = true;
   char packetToSend[100];
   while(active){
     pthread_mutex_lock(&mtxRingInfo);
-    if(checksContentOfIncomingMessage()){
-        memset(packetToSend, '\0', PACKET_SIZE);
-        prepareMessage(packetToSend);
-        if((sendto(sInfo.socket_fd, packetToSend, PACKET_SIZE, 0,
+    if(shouldMessageBeForwarded()){
+      memset(packetToSend, '\0', PACKET_SIZE);
+      prepareMessage(packetToSend);
+
+      printf("Seending packages UDP\n");
+      if((sendto(sInfo.socket_fd, packetToSend, PACKET_SIZE, 0,
                   (struct sockaddr*) &sInfo.serveraddr, sInfo.serveraddrLen)) == -1){
-            fprintf(stderr, "Something is wrong with the socket/Connection: %s \n", strerror(errno));
-            ringInfo.ringActive = false;
-        }
+        fprintf(stderr, "Something is wrong with the socket/Connection: %s \n", strerror(errno));
+        ringInfo.ringActive = false;
+      }
     }
-    printf("Seending packages UDP\n");
 
     if(ringInfo.ringActive && !(ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
+      printf("NU SOVER JAG !!! %d\n", ringInfo.currentPhase);
       pthread_cond_wait(&newMessage,  &mtxRingInfo);
     }
 
@@ -99,7 +53,7 @@ void forwardMessages(serverInfo sInfo){
 		}
     pthread_mutex_unlock(&mtxRingInfo);
 
-
+    sleep(1);
   }
   printf("Terminating Client\n");
 }

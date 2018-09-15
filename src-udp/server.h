@@ -13,6 +13,7 @@ The functions are fairly self-explanatory.
 #define __SERVER
 
 #include "ringmain.h"
+#include "common.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -32,7 +33,7 @@ void handleConnectionSession(int connection_fd);
 /*
 * Retreives and change currentPhase to the one specified in buffer
 */
-void verifyCurrentRingPhase(char *buffer);
+void getPacketInformation(char *buffer);
 
 void serverMain(int localPort);
 

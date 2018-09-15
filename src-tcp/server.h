@@ -14,6 +14,7 @@ The functions are fairly self-explanatory.
 
 #include "ringmain.h"
 #include <stdlib.h>
+#include "common.h"
 
 
 /*
@@ -31,11 +32,6 @@ int setupServerConnection(const int localPort);
 * by function argument(connection_fd).
 */
 void handleConnectionSession(int connection_fd);
-
-/*
-* Retreives and change currentPhase to the one specified in buffer
-*/
-void verifyCurrentRingPhase(char *buffer);
 
 void serverMain(int localPort);
 

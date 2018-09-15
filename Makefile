@@ -1,9 +1,10 @@
 CC=gcc
 
-SRCSTCP = $(wildcard src-tcp/*)
-SRCSUDP = $(wildcard src-udp/*)
+SRCSTCP         = $(wildcard src-tcp/*)
+SRCSUDP         = $(wildcard src-udp/*)
 
-RINGHEADER = ringmain.h
+COMMONHEADER    = ringmain.h common.h
+COMMONDSRC      = common.c
 
 OUT_MAINTCP=tcpNode
 OUT_MAINUDP=udpNode
@@ -25,10 +26,10 @@ tcp: ringTcp.o
 udp: ringUdp.o
 
 ringUdp.o:  $(SRCSUDP) $(RINGHEADER)
-	$(CC) $(CFLAGS) $(SRCSUDP) -I. -o $(OUT_MAINUDP) -g
+	$(CC) $(CFLAGS) $(SRCSUDP) $(COMMONDSRC) -I. -o $(OUT_MAINUDP) -g
 
 ringTcp.o:  $(SRCSTCP)  $(RINGHEADER)
-	$(CC) $(CFLAGS) $(RINGHEADER) $(SRCSTCP) -I. -o $(OUT_MAINTCP) -g
+	$(CC) $(CFLAGS) $(RINGHEADER) $(SRCSTCP) $(COMMONDSRC) -I. -o $(OUT_MAINTCP) -g
 
 clean:
 	rm -f *.o *.o core

@@ -16,6 +16,7 @@ The functions are fairly self explanatory.
 #include <string.h>
 #include <pthread.h>
 #include <time.h>
+#include "common.h"
 
 typedef struct {
   struct sockaddr serveraddr;
@@ -31,13 +32,6 @@ serverInfo createUdpSocket(const char *remoteAdress, const int remotePort);
 * Prepares the next packet/message.
 */
 void prepareMessage();
-
-/*
-* Checks the content of the incoming message, and will make a decision
-* if or what message that should be forwarded in the ring.
-* Return true if message should be forwarded/sent.
-*/
-bool checksContentOfIncomingMessage();
 
 /*
 * Decides which messages that should be forwarded in the ring.

@@ -77,6 +77,7 @@ int main(int argc, char **argv){
   pthread_t clientThread;
   ringInfo.participant = false;
   ringInfo.ringLeader = false;
+  ringInfo.currentPhase = NOT_STARTED;
   parseArgs(argc, argv, &inputArg);
   pthread_mutex_init(&mtxRingInfo, NULL);
   pthread_cond_init(&newMessage, NULL);

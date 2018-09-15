@@ -15,6 +15,7 @@ The functions are fairly self explanatory.
 #include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
+#include "common.h"
 
 /*
 * Sets up the connection to server using function arguments.
@@ -26,12 +27,6 @@ int setupConnectionToServer(const char *remoteAdress, const int remotePort);
 */
 void prepareMessage();
 
-/*
-* Checks the content of the incoming message, and will make a decision
-* if or what message that should be forwarded in the ring.
-* Return true if message should be forwarded/sent.
-*/
-bool checksContentOfIncomingMessage();
 
 /*
 * Decides which messages that should be forwarded in the ring.

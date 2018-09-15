@@ -49,28 +49,6 @@ int setupServerConnection(const int localPort){
   return server_fd;
 }
 
-// Checks the incoming packet to see which STATE the ring is in.
-// Copies the message and stores it for client to use.
-void verifyCurrentRingPhase(char *buffer){
-  for (int i = 0; i < strlen(buffer) && buffer[i] != '\0'; i++){
-    if(buffer[i] == '\n'){
-      if(!(strncmp(buffer, ELECTION_STR, i))){
-        ringInfo.currentPhase = ELECTION;
-      }else if(!(strncmp(buffer, ELECTION_OVER_STR, i))){
-        ringInfo.currentPhase = ELECTION_OVER;
-      }else if(!(strncmp(buffer, MESSAGE_STR, i))){
-        ringInfo.currentPhase = MESSAGE;
-      } else{
-        fprintf(stderr, "Invalid Message format - Read the instructions...\n");
-        ringInfo.ringActive = false;
-      }
-      memset(ringInfo.receivedMessage, '\0', sizeof(ringInfo.receivedMessage));
-      strncpy(ringInfo.receivedMessage, &buffer[i + 1], strlen(&buffer[i + 1]));
-      break;
-    }
-  }
-}
-
 void handleConnectionSession(int connection_fd){
   char buffer[100];
   bool active = true;
@@ -96,7 +74,7 @@ void handleConnectionSession(int connection_fd){
       fprintf(stderr," recv return error value: %s", strerror(errno));
       ringInfo.ringActive = false;
     } else if(ret > 0){
-      verifyCurrentRingPhase(buffer);
+      getPacketInformation(buffer);
       lapCount++;
       printf("\nReceived message No. %d:\n %s", lapCount, buffer);
       if (ringInfo.ringLeader == true){
@@ -104,14 +82,15 @@ void handleConnectionSession(int connection_fd){
         printf("Average lap time: %lu (ms)\n", (long int) totalTime / lapCount);
       }
 
-      // Notifes client of incoming message.
-  		pthread_cond_broadcast(&newMessage);
     }
+
     // If error or shutdown is initiated - Notify client and terminate program.
     if(!ringInfo.ringActive){
-      pthread_cond_broadcast(&newMessage);
       active = false;
     }
+
+    // Notifes client of incoming message.
+    pthread_cond_broadcast(&newMessage);
     pthread_mutex_unlock(&mtxRingInfo);
   }
 

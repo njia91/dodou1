@@ -25,60 +25,12 @@ void prepareMessage(char *packetToSend){
     }
 }
 
-bool checksContentOfIncomingMessage(){
-  bool shouldMessageBeForwarded = false;
-  int ret;
-  switch(ringInfo.currentPhase){
-    case NOT_STARTED:
-      ringInfo.participant = false;
-      shouldMessageBeForwarded = true;
-      break;
-    case ELECTION:
-      ret = strcmp(ringInfo.receivedMessage, ringInfo.highestId);
-      if(ret > 0 ){
-        ringInfo.participant = true;
-        ringInfo.highestId = ringInfo.receivedMessage;
-        shouldMessageBeForwarded = true;
-      }
-      else if (ret < 0 && ringInfo.participant == true){
-        shouldMessageBeForwarded = false;
-      }
-      else if ( ret < 0 && ringInfo.participant == false){
-        shouldMessageBeForwarded = true;
-        ringInfo.participant = true;
-      }
-      else if ( ret == 0){
-        ringInfo.currentPhase = ELECTION_OVER;
-        ringInfo.participant = false;
-        shouldMessageBeForwarded = true;
-      }
-      break;
-    case ELECTION_OVER:
-      if (strcmp(ringInfo.receivedMessage, ringInfo.ownId) == 0){
-        ringInfo.currentPhase = MESSAGE;
-        ringInfo.ringLeader = true;
-        ringInfo.startTime = clock();
-      }
-      shouldMessageBeForwarded = true;
-      break;
-    case MESSAGE:
-      ringInfo.message = ringInfo.receivedMessage;
-      shouldMessageBeForwarded = true;
-      break;
-    default:
-      fprintf(stderr, "client.cc: Unknown phase - Should not happen.\n");
-      ringInfo.ringActive = false;
-      break;
-  }
-  return shouldMessageBeForwarded;
-}
-
 void forwardMessages(int client_fd){
   bool active = true;
   char packetToSend[100];
   while (active){
     pthread_mutex_lock(&mtxRingInfo);
-    if (checksContentOfIncomingMessage()) {
+    if (shouldMessageBeForwarded()) {
       // Repackage the packet and send message.
       memset(packetToSend, '\0', PACKET_SIZE);
       prepareMessage(packetToSend);

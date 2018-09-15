@@ -31,10 +31,10 @@ static const char MESSAGE_STR[] = "MESSAGE\n";
 static const int PACKET_SIZE = 100;
 
 typedef enum {
-  ELECTION,
-  ELECTION_OVER,
-  MESSAGE,
-  NOT_STARTED
+    NOT_STARTED = 0,
+    ELECTION = 1,
+    ELECTION_OVER = 2,
+    MESSAGE = 3
 } phase;
 
 typedef struct {
