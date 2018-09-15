@@ -89,8 +89,8 @@ void forwardMessages(serverInfo sInfo){
         }
     }
 
-    if(ringinfo.ringActive && (ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
-      pthread_cond_wait(&newMessage,  &mtxRingInfo));
+    if(ringInfo.ringActive && (ringInfo.currentPhase == NOT_STARTED || ringInfo.currentPhase == ELECTION)){
+      pthread_cond_wait(&newMessage,  &mtxRingInfo);
     }
 
     if(!ringInfo.ringActive){
