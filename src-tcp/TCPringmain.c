@@ -1,8 +1,8 @@
 // TCP Implementation
 
-#include "server.h"
+#include "TCPserver.h"
 #include "ringmain.h"
-#include "client.h"
+#include "TCPclient.h"
 
 extern pthread_cond_t newMessage;
 extern pthread_mutex_t mtxRingInfo;

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "server.h"
+#include "TCPserver.h"
 
 int listenForIncommingConnection(int server_fd){
   int connection_fd;

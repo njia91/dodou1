@@ -31,7 +31,7 @@ void forwardMessages(serverInfo sInfo){
     pthread_mutex_unlock(&mtxRingInfo);
     // Before MESSAGE phase, make short sleeps to avoid spam.
     if (shortSleep &&  ringInfo.ringActive){
-      sleep(3);
+      //sleep(3);
     }
 
     shortSleep = false;

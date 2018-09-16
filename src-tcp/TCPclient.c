@@ -1,4 +1,4 @@
-#include "client.h"
+#include "TCPclient.h"
 
 void forwardMessages(int client_fd){
   bool active = true;
