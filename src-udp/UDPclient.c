@@ -33,6 +33,7 @@ void forwardMessages(serverInfo sInfo){
     if (shortSleep &&  ringInfo.ringActive){
       sleep(3);
     }
+    sleep(1);
 
     shortSleep = false;
   }
