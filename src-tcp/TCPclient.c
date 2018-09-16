@@ -19,6 +19,7 @@ void forwardMessages(int client_fd){
       active = false;
     }
     pthread_mutex_unlock(&mtxRingInfo);
+    sleep(2);
   }
   printf("Terminating Client\n");
 }

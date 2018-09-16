@@ -33,7 +33,7 @@ void forwardMessages(serverInfo sInfo){
     if (shortSleep &&  ringInfo.ringActive){
       sleep(3);
     }
-
+    sleep(2);
     shortSleep = false;
   }
   printf("Terminating Client\n");
